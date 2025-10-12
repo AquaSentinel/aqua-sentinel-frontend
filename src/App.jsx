@@ -1,35 +1,28 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
-
+import { Routes, Route, Navigate } from "react-router-dom";
+import LoginPage from "./pages/LoginPage";
+import SignupPage from "./pages/SignupPage";
+import HomePage from "./pages/HomePage";
+import ProfilePage from "./components/Profile";
+import ShipDetectionPage from "./pages/ShipDetectionPage";
+import MarineDebrisDetectionPage from "./pages/MarineDebrisDetectionPage";
+import FloodDetectionPage from "./pages/FloodDetectionPage";
+import CropClassifyVitPage from "./pages/CropClassifyVitPage";
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
     <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+      <Routes>
+        <Route path="/" element={<Navigate to={"/login"}></Navigate>}></Route>
+        <Route path="/login" element={<LoginPage />}></Route>
+        <Route path="/signup" element={<SignupPage />}></Route>
+        <Route path="/home" element={<HomePage />}/>
+          <Route path="/home/profile" element={<ProfilePage />} />
+          <Route path="/home/ship-detection" element={<ShipDetectionPage />} />
+          <Route path="/home/marine-debris-detection" element={<MarineDebrisDetectionPage />} />
+          <Route path="/home/flood-detection" element={<FloodDetectionPage />} />
+          <Route path="/home/crop-classification-vit" element={<CropClassifyVitPage />} />
+      </Routes>
     </>
-  )
+  );
 }
 
-export default App
+export default App;
