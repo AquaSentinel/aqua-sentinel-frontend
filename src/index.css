@@ -1,3 +1,18 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+html, body, #root {
+  min-height: 100%;
+}
+
+html, body {
+  overflow-x: hidden;  /* avoid sideways scroll because of animations */
+}
+
+body {
+  /* DO NOT set overflow: hidden here */
+  background: transparent; /* Tailwind will set backgrounds */
+}
+
+/* On iOS, make overlay menus scroll smoothly if you use fixed sheets */
+.scroll-y-touch {
+  -webkit-overflow-scrolling: touch;
+}
