@@ -1,4 +1,5 @@
 import {toast} from 'react-toastify';
+import { FiDownload } from "react-icons/fi"; // make sure to install: npm install react-icons
 export const handleSucess = (msg)=>{
     toast.success(msg,{
         position : 'top-right'
@@ -64,3 +65,56 @@ export const ImageLightbox = ({ open, src, alt, onClose, caption }) => {
     </div>
   );
 };
+
+export function DownloadBtn({ disabled, onClick, label = "Download" }) {
+  return (
+    <button
+      disabled={disabled}
+      onClick={onClick}
+      className="inline-flex items-center justify-center rounded-full 
+                 bg-gradient-to-r from-indigo-600 via-fuchsia-600 to-cyan-600
+                 px-3 py-2 text-white shadow-md transition 
+                 hover:opacity-90 disabled:opacity-50 sm:px-4 sm:py-2"
+      title={label}
+    >
+      {/* Download icon (visible always) */}
+      <FiDownload className="h-4 w-4" />
+
+      {/* Text label — hidden on small screens, visible on md+ */}
+      <span className="ml-2 hidden text-sm font-semibold sm:inline">{label}</span>
+    </button>
+  );
+}
+
+export function ImageCard({ title, src, placeholder, onDownload }) {
+  return (
+    <div
+      className="relative overflow-hidden rounded-3xl border
+                 border-gray-200/70 bg-white/80 p-4 backdrop-blur
+                 dark:border-white/10 dark:bg-white/10"
+    >
+      {/* Title and Download button row */}
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <div className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
+          {title}
+        </div>
+        <DownloadBtn disabled={!src} onClick={onDownload} />
+      </div>
+
+      {/* Image or placeholder */}
+      <div className="aspect-[16/10] w-full overflow-hidden rounded-xl bg-gray-100 dark:bg-gray-800">
+        {src ? (
+          <img
+            src={src}
+            alt={title}
+            className="h-full w-full object-contain"
+          />
+        ) : (
+          <div className="flex h-full items-center justify-center px-3 text-center text-xs text-gray-500 dark:text-gray-400">
+            {placeholder}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

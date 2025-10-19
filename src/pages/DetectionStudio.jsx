@@ -4,7 +4,7 @@ import MyNavBar from "../components/MyNavBar";
 import Footer from "../components/Footer";
 import DualDetector from "../components/DualDetector";
 import { motion } from "framer-motion";
-
+import UnifiedDetector from "../components/UnifiedDetector";
 export default function DetectionStudio() {
   const [loggedInUser, setLoggedInUser] = useState("");
   const [emailId, setEmail] = useState("");
@@ -27,23 +27,26 @@ export default function DetectionStudio() {
           transition={{ duration: 0.35 }}
         >
           <span className="bg-gradient-to-r from-indigo-500 via-fuchsia-500 to-cyan-500 bg-clip-text text-transparent">
-            Aqua Sentinel —{" "}
-            Detection Studio
+            Aqua Sentinel — Detection Studio
           </span>
         </motion.h1>
         <p className="mt-3 max-w-3xl text-sm md:text-base text-gray-700 dark:text-gray-300">
-          Upload separately for <b>Ship Detection</b> and for <b>Marine Debris Detection</b>. Each model runs
-          its own pipeline and provides a downloadable result image.
+          Upload separately for <b>Ship Detection</b> and for{" "}
+          <b>Marine Debris Detection</b>. Each model runs its own pipeline and
+          provides a downloadable result image.
         </p>
         {emailId && (
-          <p className="mt-2 text-xs text-gray-600 dark:text-gray-400">Signed in as <span className="font-medium">{emailId}</span></p>
+          <p className="mt-2 text-xs text-gray-600 dark:text-gray-400">
+            Signed in as <span className="font-medium">{emailId}</span>
+          </p>
         )}
       </header>
 
       {/* Two independent pipelines */}
-      <main className="mx-auto max-w-7xl px-5 py-10">
+      <main className="mx-auto max-w-[100rem] px-5 py-10">
         <DualDetector />
       </main>
+      
 
       <ToastContainer />
       <Footer />
