@@ -1,45 +1,11 @@
 import React, { useRef, useState } from "react";
+import { ImageCard } from "./ImageCard";
 
 // --- config ---
-const ENDPOINTS = { combined: null, ship: null, debris: null }; // wire your real endpoints here
+const ENDPOINTS = { combined: "http://localhost:5050/api/detect", ship: null, debris: null };
 const ACCEPT = "image/png,image/jpeg,image/webp";
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-// Small, responsive download button (icon-only on XS)
-export function DownloadBtn({ disabled, onClick, label = "Download" }) {
-  return (
-    <button
-      disabled={disabled}
-      onClick={onClick}
-      className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-indigo-600 via-fuchsia-600 to-cyan-600
-                 px-3 py-2 text-white shadow transition hover:opacity-90 disabled:opacity-50 sm:px-4"
-      title={label}
-    >
-      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor"><path d="M5 20h14v-2H5v2zm7-18l-5 5h3v6h4V7h3l-5-5z" /></svg>
-      <span className="ml-2 hidden text-sm font-semibold sm:inline">{label}</span>
-    </button>
-  );
-}
-
-export function ImageCard({ title, src, placeholder, onDownload }) {
-  return (
-    <div className="relative overflow-hidden rounded-2xl border border-gray-200/70 bg-white/80 p-4 backdrop-blur dark:border-white/10 dark:bg-white/10">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <div className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">{title}</div>
-        <DownloadBtn disabled={!src} onClick={onDownload} />
-      </div>
-      <div className="aspect-[16/10] w-full overflow-hidden rounded-xl bg-gray-100 dark:bg-gray-800">
-        {src ? (
-          <img src={src} alt={title} className="h-full w-full object-contain" />
-        ) : (
-          <div className="flex h-full items-center justify-center px-3 text-center text-xs text-gray-500 dark:text-gray-400">
-            {placeholder}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
 
 export default function UnifiedDetector({ onArtifactsChange = () => {} }) {
   const inputRef = useRef(null);
@@ -110,10 +76,23 @@ export default function UnifiedDetector({ onArtifactsChange = () => {} }) {
         fd.append("marine_debris", debrisFile);
         const res = await fetch(ENDPOINTS.combined, { method: "POST", body: fd });
         if (!res.ok) throw new Error(`Server responded ${res.status}`);
-        // DEMO: echo originals; replace with parsing your response to two blobs
-        await sleep(600);
-        const shipBlob = shipFile;
-        const debrisBlob = debrisFile;
+        
+        // Extract ZIP file from response
+        const zipBlob = await res.blob();
+        const JSZip = (await import('jszip')).default;
+        const zip = await JSZip.loadAsync(zipBlob);
+        
+        // Extract ship-result.png and debris-result.png
+        const shipResultFile = zip.file("ship-result.png");
+        const debrisResultFile = zip.file("debris-result.png");
+        
+        if (!shipResultFile || !debrisResultFile) {
+          throw new Error("ZIP does not contain expected files (ship-result.png, debris-result.png)");
+        }
+        
+        const shipBlob = await shipResultFile.async("blob");
+        const debrisBlob = await debrisResultFile.async("blob");
+        
         setShipResultBlob(shipBlob);
         setDebrisResultBlob(debrisBlob);
         setShipResultUrl(URL.createObjectURL(shipBlob));
@@ -231,9 +210,9 @@ export default function UnifiedDetector({ onArtifactsChange = () => {} }) {
                 if (inputRef.current) inputRef.current.value = "";
               }}
               disabled={busy || (!shipFile && !debrisFile && !shipResultUrl && !debrisResultUrl)}
-              className="inline-flex items-center justify-center rounded-xl bg-white px-5 py-3 text-sm font-semibold text-gray-900 ring-1 ring-gray-200 transition hover:bg-gray-50 disabled:opacity-60 dark:bg-white/10 dark:text-white dark:ring-white/10 dark:hover:bg-white/15"
+              className="inline-flex items-center justify-center rounded-xl bg-violet px-5 py-3 text-sm font-semibold text-gray-900 ring-1 ring-gray-200 transition hover:bg-gray-50 disabled:opacity-60 dark:bg-white/10 dark:text-white dark:ring-white/10 dark:hover:bg-white/15"
             >
-              Reset
+              Reset 
             </button>
           </div>
 
