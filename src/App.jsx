@@ -5,6 +5,7 @@ import HomePage from "./pages/HomePage";
 import ProfilePage from "./components/Profile";
 import DetectionStudio from "./pages/DetectionStudio";
 function App() {
+  console.log("Firebase Project ID:", import.meta.env.VITE_FIREBASE_PROJECT_ID);
   return (
     <>
       <Routes>
