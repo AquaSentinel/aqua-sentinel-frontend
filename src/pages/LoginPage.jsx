@@ -1,87 +1,118 @@
-import { useState } from 'react';
-import { Link , useNavigate } from 'react-router-dom';
-import { handleError, handleSucess } from '../utils/utils';
-import { ToastContainer } from 'react-toastify';
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { ToastContainer } from "react-toastify";
+import { handleError, handleSucess } from "../utils/utils";
+import { signInWithPopup } from "firebase/auth";
+import { auth, provider } from "../firebase";
+import axios from "axios";
 
 const LoginPage = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
-    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
-  let navigate = useNavigate();
+
+  // -----------------------------
+  // 🔹 Manual Login Flow
+  // -----------------------------
   const handleFormSubmission = async (event) => {
     event.preventDefault();
-    console.log(formData);
-    const {email,password} = formData;
+    const { email, password } = formData;
 
-    try{
-      const url = "http://localhost:8080/auth/login";
-
-      const response = await fetch(url,{
-        method : "POST",
-        headers : {
-          "Content-Type" : "application/json"
-        },
-        body : JSON.stringify({email : email ,password : password})
+    try {
+      const response = await fetch("http://127.0.0.1:5050/api/login/manual", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
       });
 
-      /*
-      message: "Login successfull", success: true, token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImRlZXBha0BnbWFpbC5jb20iLCJuYW1lIjoiZGVlcGFrIiwiX2lkIjoiNjc2YzY3MGQ3OTk1ZmE0YTBkZjc0NzA1IiwiaWF0IjoxNzM1MTU4NTk2LCJleHAiOjE3MzUxNTg2NTZ9.Cd3O5kwQ-BKfX7ubv703eHhVgG8WsRELe9jM1GRzNAA", name: "deepak", email: "deepak@gmail.com" 
-      */
       const result = await response.json();
-      let {success , message , token , name , error} = result;
-      console.log(result);
+      const { success, message, token, name, error } = result;
 
-      if(success){
+      if (success) {
         handleSucess(message);
-        localStorage.setItem('token',token);
-        localStorage.setItem('loggedInUser',name);
-        localStorage.setItem('emailId',email);
-        setTimeout(()=>{
-          navigate('/home')
-        },5000);
-      }
-      else if(error){
-        // const details = error?.details[0].message;  
-        let errorMessage = error?.[0]?.message || "An unexpected error occurred";
-        handleError(errorMessage);
-      }
-      else if(!success){
+        localStorage.setItem("token", token);
+        localStorage.setItem("loggedInUser", name);
+        localStorage.setItem("emailId", email);
+        setTimeout(() => navigate("/home"), 1500);
+      } else if (error) {
+        handleError(error?.[0]?.message || "An unexpected error occurred");
+      } else {
         handleError(message);
       }
-
-
-
-    }catch(err){
-      handleError(err);
+    } catch (err) {
+      handleError(err.message);
     }
-    
-  }
+  };
 
+  // -----------------------------
+  // 🔹 Google Login Flow
+  // -----------------------------
+  const handleGoogleLogin = async () => {
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      const token = await user.getIdToken();
+
+      const response = await axios.post(
+        "http://127.0.0.1:5050/api/login/google",
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      handleSucess(`Welcome back ${user.displayName || user.email}!`);
+      localStorage.setItem("token", token);
+      localStorage.setItem("loggedInUser", user.displayName || user.email);
+      setTimeout(() => navigate("/home"), 1500);
+    } catch (error) {
+      console.error("❌ Google login failed:", error);
+      handleError("Google Login failed. Please try again.");
+    }
+  };
+
+  // -----------------------------
+  // 🔹 UI
+  // -----------------------------
   return (
     <div className="min-h-screen w-full relative overflow-hidden flex items-center justify-center px-4 sm:px-6 lg:px-8">
       <iframe
         title="Background Live Stream"
         src="https://www.youtube.com/embed/jzx_n25g3kA?autoplay=1&mute=1&controls=0&rel=0&modestbranding=1&loop=1&playlist=jzx_n25g3kA"
         className="absolute top-1/2 left-1/2 w-[200%] h-[200%] md:w-[150%] md:h-[150%] -translate-x-1/2 -translate-y-1/2 pointer-events-none"
-        style={{ border: 'none' }}
+        style={{ border: "none" }}
         allow="autoplay; encrypted-media; picture-in-picture"
         allowFullScreen
         loading="lazy"
         aria-hidden="true"
       />
+
       <div className="min-h-screen flex items-center justify-center relative z-10 w-full max-w-4xl">
         <div className="w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-lg">
           <div className="bg-black/50 p-8 sm:p-12 rounded-2xl backdrop-blur-xl shadow-2xl border border-gray-600/20">
             <div className="mb-8 text-center">
-              <h1 className="text-4xl sm:text-5xl font-bold text-white mb-4">Login</h1>
-              <p className="text-gray-300 text-md sm:text-lg">Access your account</p>
+              <h1 className="text-4xl sm:text-5xl font-bold text-white mb-4">
+                Login
+              </h1>
+              <p className="text-gray-300 text-md sm:text-lg">
+                Access your account
+              </p>
             </div>
-            
-            <form className="space-y-6 sm:space-y-8" onSubmit={handleFormSubmission}>
+
+            {/* Manual Login Form */}
+            <form
+              className="space-y-6 sm:space-y-8"
+              onSubmit={handleFormSubmission}
+            >
               <div>
-                <label className="block text-gray-200 text-sm font-semibold mb-3">Email</label>
+                <label className="block text-gray-200 text-sm font-semibold mb-3">
+                  Email
+                </label>
                 <input
                   type="email"
                   name="email"
@@ -93,9 +124,11 @@ const LoginPage = () => {
                   placeholder="Enter your email"
                 />
               </div>
-              
+
               <div>
-                <label className="block text-gray-200 text-sm font-semibold mb-3">Password</label>
+                <label className="block text-gray-200 text-sm font-semibold mb-3">
+                  Password
+                </label>
                 <input
                   type="password"
                   name="password"
@@ -117,10 +150,27 @@ const LoginPage = () => {
                 Sign in
               </button>
 
+              {/* Divider */}
+              <div className="text-center text-gray-400 my-4">or</div>
+
+              {/* Google Login */}
+              <button
+                type="button"
+                onClick={handleGoogleLogin}
+                className="w-full py-3 bg-white text-gray-800 rounded-lg font-semibold flex items-center justify-center gap-3 hover:bg-gray-100 transition-all duration-300"
+              >
+                <img
+                  src="https://www.svgrepo.com/show/355037/google.svg"
+                  alt="Google logo"
+                  className="w-6 h-6"
+                />
+                Continue with Google
+              </button>
+
               <div className="text-center mt-6 pt-4 border-t border-gray-600/20">
                 <p className="text-gray-400">
-                  Don't have an account?{' '}
-                  <Link 
+                  Don’t have an account?{" "}
+                  <Link
                     to="/signup"
                     className="text-blue-400 hover:text-blue-300 font-medium transition-colors duration-300"
                   >
@@ -129,7 +179,7 @@ const LoginPage = () => {
                 </p>
               </div>
             </form>
-            <ToastContainer/>
+            <ToastContainer />
           </div>
         </div>
       </div>
