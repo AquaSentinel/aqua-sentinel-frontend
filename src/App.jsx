@@ -5,14 +5,15 @@ import HomePage from "./pages/HomePage";
 import ProfilePage from "./components/Profile";
 import DetectionStudio from "./pages/DetectionStudio";
 function App() {
+  console.log("Firebase Project ID:", import.meta.env.VITE_FIREBASE_PROJECT_ID);
   return (
     <>
       <Routes>
         <Route path="/" element={<HomePage />}></Route>
         <Route path="/login" element={<LoginPage />}></Route>
         <Route path="/signup" element={<SignupPage />}></Route>
-        <Route path="/home" element={<DetectionStudio />}/>
-          <Route path="/home/profile" element={<ProfilePage />} />
+        <Route path="/DetectionStudio" element={<DetectionStudio />}/>
+          <Route path="/DetectionStudio/profile" element={<ProfilePage />} />
       </Routes>
     </>
   );

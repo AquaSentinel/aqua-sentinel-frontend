@@ -3,20 +3,58 @@ import { ToastContainer } from "react-toastify";
 import MyNavBar from "../components/MyNavBar";
 import Footer from "../components/Footer";
 import DualDetector from "../components/DualDetector";
+import { useNavigate } from "react-router-dom";
+
 import { motion } from "framer-motion";
 import UnifiedDetector from "../components/UnifiedDetector";
 export default function DetectionStudio() {
   const [loggedInUser, setLoggedInUser] = useState("");
   const [emailId, setEmail] = useState("");
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    setLoggedInUser(localStorage.getItem("loggedInUser") || "");
-    setEmail(localStorage.getItem("emailId") || "");
-  }, []);
+    useEffect(() => {
+    const token = localStorage.getItem("token");
+    const name = localStorage.getItem("loggedInUser");
+    if (!token) {
+      navigate("/login");
+    } else {
+      setLoggedInUser(name || "");
+      setEmail(localStorage.getItem("emailId") || "");
+    }
+  }, [navigate]);
+
+  // useEffect(() => {
+  //   setLoggedInUser(localStorage.getItem("loggedInUser") || "");
+  //   setEmail(localStorage.getItem("emailId") || "");
+  // }, []);
+
+    const handleLogout = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch("http://127.0.0.1:5050/api/logout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        localStorage.clear(); // clear all
+        setLoggedInUser("");  // update UI state
+        navigate("/login", { replace: true }); // immediate navigation
+      } else {
+        console.error("Logout failed:", result.message);
+      }
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
 
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-gradient-to-b from-white via-white to-gray-50 dark:from-[#0b0e13] dark:via-[#0b0e13] dark:to-[#0b0e13]">
-      <MyNavBar loggedInUser={loggedInUser} />
+      <MyNavBar loggedInUser={loggedInUser} onLogout={handleLogout} />
 
       {/* Page header (no hero card; fully scrollable) */}
       <header className="mx-auto max-w-7xl px-5 pt-24 md:pt-28">

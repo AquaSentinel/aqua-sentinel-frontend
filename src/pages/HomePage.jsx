@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import MyNavBar from "../components/MyNavBar";
 import Footer from "../components/Footer";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { useThemeManager } from "../context/ThemeManager";
 // OPTIONAL: import your assets (replace with your files)
 // import logo from "../assets/aqua-logo.svg";              // <-- put your logo svg/png here
@@ -10,16 +11,47 @@ import aqua from "../assets/images/aqua.png"; // <-- Aqua Sentinel logo
 import demoVideo from "../assets/videos/demo.mp4"; // <-- short muted demo video
 
 export default function HomePage() {
+
+  const navigate = useNavigate();
   const [loggedInUser, setLoggedInUser] = useState("");
-    const { isDark, theme, toggle } = useThemeManager();
+  const { isDark, theme, toggle } = useThemeManager();
+
   useEffect(() => {
-    setLoggedInUser(localStorage.getItem("loggedInUser") || "");
-  }, []);
+    const token = localStorage.getItem("token");
+    const name = localStorage.getItem("loggedInUser");
+    setLoggedInUser(name || "");
+    
+  }, [navigate]);
+
+  const handleLogout = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch("http://127.0.0.1:5050/api/logout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        localStorage.clear(); // clear all
+        setLoggedInUser("");  // update UI state
+        navigate("/login", { replace: true }); // immediate navigation
+      } else {
+        console.error("Logout failed:", result.message);
+      }
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
+
 
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-gradient-to-b from-gray-50 via-white to-white dark:from-[#0b0e13] dark:via-[#0b0e13] dark:to-[#0b0e13]">
       {/* top nav */}
-      <MyNavBar loggedInUser={loggedInUser} />
+      <MyNavBar loggedInUser={loggedInUser} onLogout={handleLogout} />
 
       {/* HERO */}
       <header className="relative mx-auto max-w-7xl px-6 pt-28 md:pt-32">
@@ -45,11 +77,11 @@ export default function HomePage() {
                 AQUA SENTINEL
               </span>
             </div>
-              {/* mt-4 text-lg text-zinc-400 */}
+            {/* mt-4 text-lg text-zinc-400 */}
             <motion.h1
               className={`text-4xl md:text-6xl font-extrabold tracking-tight transition-colors duration-300
         ${isDark ? "text-gray-200" : "text-gray-800"}
-      `}    
+      `}
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4 }}
@@ -166,14 +198,14 @@ export default function HomePage() {
             //   desc: "One upload triggers both models in sequence. No juggling steps.",
             //   icon: "🧩",
             // },
-             {
+            {
               title: "Optical Debris Detection",
               desc: "Employs AI models on optical satellite imagery to identify floating marine debris like plastic concentrations and oil slicks.",
               icon: "🧩",
             },
             {
               title: "Enhanced Law Enforcement",
-              desc : "Empowers environmental agencies with concrete data for more effective investigations and penalties.",
+              desc: "Empowers environmental agencies with concrete data for more effective investigations and penalties.",
               icon: "♿",
             },
             {
