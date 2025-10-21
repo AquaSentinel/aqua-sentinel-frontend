@@ -12,8 +12,8 @@ function App() {
         <Route path="/" element={<HomePage />}></Route>
         <Route path="/login" element={<LoginPage />}></Route>
         <Route path="/signup" element={<SignupPage />}></Route>
-        <Route path="/home" element={<DetectionStudio />}/>
-          <Route path="/home/profile" element={<ProfilePage />} />
+        <Route path="/DetectionStudio" element={<DetectionStudio />}/>
+          <Route path="/DetectionStudio/profile" element={<ProfilePage />} />
       </Routes>
     </>
   );

@@ -7,6 +7,7 @@ import signupSideImage from '../assets/images/signupImage.png';
 import { signInWithPopup } from "firebase/auth";
 import { auth, provider } from "../firebase";
 import axios from "axios";
+import MyNavBar from '../components/MyNavBar';
 
 const SignUpPage = () => {
   const navigate = useNavigate();
@@ -36,7 +37,7 @@ const SignUpPage = () => {
 
       console.log("🧠 Server Response:", response.data);
       handleSucess(`Welcome ${user.displayName || user.email}!`);
-      setTimeout(() => navigate('/home'), 2000); // redirect after success
+      setTimeout(() => navigate('/DetectionStudio'), 2000); // redirect after success
 
     } catch (error) {
       console.error("❌ Google Sign-In error:", error);
@@ -45,6 +46,8 @@ const SignUpPage = () => {
   };
 
   return (
+    <>
+    <MyNavBar />
     <div
       className="min-h-screen w-full flex items-center justify-center bg-cover bg-center"
       style={{
@@ -111,6 +114,7 @@ const SignUpPage = () => {
 
       <ToastContainer />
     </div>
+    </>
   );
 };
 
