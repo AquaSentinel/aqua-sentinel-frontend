@@ -26,14 +26,14 @@ export default function Footer() {
           </div>
 
           <div>
-            <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
+            <h4 className="text-sm font-semibold text-gray-900 dark:text-black">
               Product
             </h4>
             <ul className="mt-3 space-y-2 text-sm">
               <li>
                 <a
                   href="#demo"
-                  className="text-gray-700 hover:text-indigo-600 dark:text-gray-300 dark:hover:text-indigo-400"
+                  className="text-gray-700 hover:text-indigo-600 dark:text-black-300 dark:hover:text-indigo-400"
                 >
                   Demo
                 </a>
