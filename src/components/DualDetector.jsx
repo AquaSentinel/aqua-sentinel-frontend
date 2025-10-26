@@ -68,7 +68,7 @@ const DualDetector = () => {
 
   return (
     <>
-      {/* ✅ Pass the new merge-aware callback */}
+      {/* Pass the new merge-aware callback */}
       <UnifiedDetector onArtifactsChange={handleArtifactsChange} />
 
       {/* CTA */}
