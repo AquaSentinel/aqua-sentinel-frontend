@@ -9,9 +9,9 @@ const ReportDialog = ({ open, onClose, onSend, attachHints = [] }) => {
 
   const inputBase =
     "w-full rounded-xl border px-3 py-2 text-sm transition " +
-    "placeholder:text-gray-500 dark:placeholder:text-gray-400 " +
+    "placeholder:text-gray-500 dark:placeholder:text-black-400 " +
     "border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 " +
-    "dark:border-white/10 dark:bg-white/10 dark:text-white";
+    "dark:border-white/10 dark:bg-white/10 dark:text-red";
 
   return (
     <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-3 sm:p-4">
@@ -21,17 +21,17 @@ const ReportDialog = ({ open, onClose, onSend, attachHints = [] }) => {
                    border-gray-200 bg-white shadow-xl
                    dark:border-white/10 dark:bg-[#0e1117]"
       >
-        <div className="border-b border-gray-200 px-5 py-4 text-lg font-semibold text-gray-900 dark:border-white/10 dark:text-white">
+        <div className="border-b border-gray-200 px-5 py-4 text-3xl font-semibold text-gray-900 dark:border-white/10 dark:text-red">
           Send Report
         </div>
 
         <div className="px-5 py-4">
-          <p className="text-sm text-gray-600 dark:text-gray-300">
+          <p className="text-lg text-gray-600 dark:text-red-300">
             Share concerns as a ship operator. We’ll compile a report and attach your images as a ZIP.
           </p>
 
           {attachHints?.length ? (
-            <div className="mt-3 rounded-lg bg-gray-50 p-3 text-xs text-gray-700 ring-1 ring-gray-200 dark:bg-white/5 dark:text-gray-300 dark:ring-white/10">
+            <div className="mt-3 rounded-lg bg-gray-50 p-3 text-lg text-gray-700 ring-1 ring-gray-200 dark:bg-white/5 dark:text-black-300 dark:ring-black/10">
               The following images will be included:
               <ul className="mt-2 list-disc pl-5 space-y-1">
                 {attachHints.map((h) => <li key={h}>{h}</li>)}
@@ -51,7 +51,7 @@ const ReportDialog = ({ open, onClose, onSend, attachHints = [] }) => {
             <button
               onClick={onClose}
               className="rounded-xl bg-gray-100 px-4 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-200
-                         dark:bg-white/10 dark:text-white dark:hover:bg-white/15"
+                         dark:bg-white/10 dark:text-black dark:hover:bg-black/15"
             >
               Cancel
             </button>

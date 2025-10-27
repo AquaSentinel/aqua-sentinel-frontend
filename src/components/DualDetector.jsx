@@ -3,6 +3,8 @@ import React, { useState } from "react";
 import ReportDialog from "./ReportDialog.jsx";
 import UnifiedDetector from "./UnifiedDetector.jsx";
 import JSZip from "jszip";
+import { saveAs } from "file-saver";
+import { auth, db, storage } from "../firebase";
 
 const DualDetector = () => {
   const [reportOpen, setReportOpen] = useState(false);
@@ -13,20 +15,30 @@ const DualDetector = () => {
     shipResult: null,
     debrisOriginal: null,
     debrisResult: null,
-    // urls are optional; useful for previews if you want them in dialog
-    shipOrigUrl: "", shipResultUrl: "", debrisOrigUrl: "", debrisResultUrl: "",
+    shipOrigUrl: "",
+    shipResultUrl: "",
+    debrisOrigUrl: "",
+    debrisResultUrl: "",
   });
 
+  // This ensures updates from UnifiedDetector get merged, not replaced
+  const handleArtifactsChange = (update) => {
+    setArtifacts((prev) => ({
+      ...prev,
+      ...update,
+    }));
+  };
+
   const attachHints = [
-    artifacts.shipOriginal && "Ship • Original",
-    artifacts.shipResult && "Ship • Result",
-    artifacts.debrisOriginal && "Debris • Original",
-    artifacts.debrisResult && "Debris • Result",
+    artifacts.shipOriginal && "Ship->Original",
+    artifacts.shipResult && "Ship->Result",
+    artifacts.debrisOriginal && "Debris->Original",
+    artifacts.debrisResult && "Debris->Result",
   ].filter(Boolean);
 
   const makeName = (blob, fallback) => {
     const type = (blob?.type || "").toLowerCase();
-    if (type.includes("png"))  return `${fallback}.png`;
+    if (type.includes("png")) return `${fallback}.png`;
     if (type.includes("webp")) return `${fallback}.webp`;
     if (type.includes("jpeg") || type.includes("jpg")) return `${fallback}.jpg`;
     return `${fallback}.png`;
@@ -34,25 +46,16 @@ const DualDetector = () => {
 
   const onSendReport = async (form) => {
     try {
-      // Build a ZIP with up to 4 images
-      const zip = new JSZip();
-      if (artifacts.shipOriginal)  zip.file(makeName(artifacts.shipOriginal,  "ship-original"),  artifacts.shipOriginal);
-      if (artifacts.shipResult)    zip.file(makeName(artifacts.shipResult,    "ship-result"),    artifacts.shipResult);
-      if (artifacts.debrisOriginal)zip.file(makeName(artifacts.debrisOriginal,"debris-original"),artifacts.debrisOriginal);
-      if (artifacts.debrisResult)  zip.file(makeName(artifacts.debrisResult,  "debris-result"),  artifacts.debrisResult);
-
-      const zipBlob = await zip.generateAsync({ type: "blob", compression: "DEFLATE" });
-      const zipFile = new File([zipBlob], "aqua-sentinel-report.zip", { type: "application/zip" });
-
-      // Send to your backend as multipart/form-data
+      
+      // Send to backend as multipart/form-data
       const fd = new FormData();
       fd.append("vessel", form.vessel || "");
       fd.append("location", form.location || "");
       fd.append("email", form.email || "");
       fd.append("notes", form.notes || "");
-      fd.append("attachments", zipFile);
+      fd.append("userId", auth.currentUser?.uid || "anonymous");
 
-      const res = await fetch("/api/report", { method: "POST", body: fd });
+      const res = await fetch("http://localhost:5050/api/report", { method: "POST", body: fd });
       if (!res.ok) throw new Error(`Server responded ${res.status}`);
 
       alert("Report sent successfully with ZIP attachments.");
@@ -65,8 +68,8 @@ const DualDetector = () => {
 
   return (
     <>
-      {/* Unified detector will send us artifacts via onArtifactsChange */}
-      <UnifiedDetector onArtifactsChange={setArtifacts} />
+      {/* Pass the new merge-aware callback */}
+      <UnifiedDetector onArtifactsChange={handleArtifactsChange} />
 
       {/* CTA */}
       <div className="mt-6 overflow-hidden rounded-3xl border border-indigo-200/40 bg-gradient-to-r from-indigo-600 to-fuchsia-600 p-5 sm:p-6 md:p-10 shadow-lg">

@@ -23,10 +23,6 @@ export default function DetectionStudio() {
     }
   }, [navigate]);
 
-  // useEffect(() => {
-  //   setLoggedInUser(localStorage.getItem("loggedInUser") || "");
-  //   setEmail(localStorage.getItem("emailId") || "");
-  // }, []);
 
     const handleLogout = async () => {
     try {
