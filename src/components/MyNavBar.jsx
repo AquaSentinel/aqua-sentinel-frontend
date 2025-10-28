@@ -168,7 +168,7 @@ const MyNavBar = ({ loggedInUser = "", onLogout }) => {
             )}
 
             {/* Theme toggle */}
-            <button
+            {/* <button
               onClick={cycleTheme}
               title={`Theme: ${theme}`}
               aria-label="Toggle theme"
@@ -177,7 +177,7 @@ const MyNavBar = ({ loggedInUser = "", onLogout }) => {
                          dark:bg-white/10 dark:hover:bg-white/20"
             >
               {Icon}
-            </button>
+            </button> */}
           </div>
 
           {/* Mobile controls */}
