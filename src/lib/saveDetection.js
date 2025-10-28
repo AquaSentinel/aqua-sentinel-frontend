@@ -4,8 +4,14 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 async function uploadOne(path, blobOrFile) {
   const r = ref(storage, path);
-  await uploadBytes(r, blobOrFile);
-  return getDownloadURL(r);
+  try {
+    await uploadBytes(r, blobOrFile);
+    return getDownloadURL(r);
+  } catch (e) {
+    // Include path in the error log to help diagnose permission/CORS issues
+    console.error('[saveDetectionRecord] upload failed', { path, err: e });
+    throw e;
+  }
 }
 
 /*
@@ -15,9 +21,19 @@ async function uploadOne(path, blobOrFile) {
 export async function saveDetectionRecord(uid, tsISO, {
   shipOriginal, debrisOriginal, shipResult, debrisResult
 }) {
-const email = auth?.currentUser?.email || null;
-  const base = `users/${uid}/records/${tsISO}`;
-//   console.debug('[saveDetectionRecord] uid, base:', { uid, base });
+  const current = auth?.currentUser || null;
+  if (!current) {
+    const msg = '[saveDetectionRecord] no authenticated user found. Aborting upload.';
+    console.error(msg);
+    throw new Error(msg);
+  }
+  const email = current.email || null;
+  if (uid !== current.uid) {
+    console.warn('[saveDetectionRecord] uid param does not match auth.currentUser.uid', { uidParam: uid, authUid: current.uid });
+  }
+
+  const base = `users/${current.uid}/records/${tsISO}`;
+  // console.debug('[saveDetectionRecord] uid, base:', { uid, base });
   const [u1, u2, u3, u4] = await Promise.all([
     uploadOne(`${base}/ship-original.png`,   shipOriginal),
     uploadOne(`${base}/debris-original.png`, debrisOriginal),
