@@ -146,17 +146,23 @@ export default function UnifiedDetector({ onArtifactsChange = () => {} }) {
         });
         // SAVE TO FIRESTORE & STORAGE
         try {
-          // console.debug('[UnifiedDetector] auth.currentUser before save:', auth.currentUser);
-          const uid = auth.currentUser?.uid || "dev-user"; // require login in prod
-          // console.log("Preparing to save detection record for UID:", uid);
-          const tsISO = new Date().toISOString();
-          await saveDetectionRecord(uid, tsISO, {
-            shipOriginal: shipFile,
-            debrisOriginal: debrisFile,
-            shipResult: shipBlob,
-            debrisResult: debrisBlob,
-          });
-          // console.log('[UnifiedDetector] saveDetectionRecord ok');
+          // Only save to cloud when user is authenticated. Avoid writing under a placeholder id.
+          const currentUser = auth.currentUser || null;
+          if (!currentUser) {
+            // If you want anonymous saves, handle them separately — for now we skip saving and inform the user.
+            console.warn('[UnifiedDetector] user not authenticated; skipping cloud save');
+            setErr('Not signed in — detection completed locally. Sign in to save to cloud.');
+          } else {
+            const uid = currentUser.uid;
+            const tsISO = new Date().toISOString();
+            await saveDetectionRecord(uid, tsISO, {
+              shipOriginal: shipFile,
+              debrisOriginal: debrisFile,
+              shipResult: shipBlob,
+              debrisResult: debrisBlob,
+            });
+            // console.log('[UnifiedDetector] saveDetectionRecord ok');
+          }
         } catch (persistErr) {
           try {
             // console.error('[UnifiedDetector] Persist failed (full):', persistErr);
