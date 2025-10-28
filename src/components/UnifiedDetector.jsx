@@ -4,6 +4,7 @@ import { auth, db, storage } from "../firebase";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { saveDetectionRecord } from "../lib/saveDetection";
+import LogPanel from "./LogPanel";
 // --- config ---
 const ENDPOINTS = {
   combined: "http://localhost:5050/api/detect",
@@ -426,6 +427,9 @@ export default function UnifiedDetector({ onArtifactsChange = () => {} }) {
           />
         </div>
       </div>
+
+      {/* Log panel rendered alongside detector. Keeps paths unchanged; panel shows history and image popups. */}
+      <LogPanel />
     </div>
   );
 }
