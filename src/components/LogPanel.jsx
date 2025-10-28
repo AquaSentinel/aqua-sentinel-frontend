@@ -1,6 +1,9 @@
 import React, { useMemo, useState } from "react";
 import useLogs from "../hooks/useLogs";
 import { auth } from "../firebase";
+import SendReport from "./SendReport.jsx";
+import { deleteRecord } from "../lib/deleteRecord";
+import ActionLoader from "./ActionLoader";
 // Demo images (local assets) - used only for a temporary UI demo when datastore is empty
 import demoShip from "../assets/images/shipdetect.png";
 import demoDebris from "../assets/images/debrisdetect.png";
@@ -34,6 +37,28 @@ export default function LogPanel({ uid: uidProp }) {
     setOpen(true);
   };
 
+  const [deletingId, setDeletingId] = useState(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+
+
+  // Report dialog state (for sending a report for the selected log)
+  const [reportDialogOpen, setReportDialogOpen] = useState(false);
+
+  const makeName = (url, idx, fallback) => {
+    // Try to derive extension from URL (fallback to png)
+    try {
+      const lower = (url || "").toLowerCase();
+      if (lower.includes(".png")) return `${fallback}-${idx + 1}.png`;
+      if (lower.includes(".webp")) return `${fallback}-${idx + 1}.webp`;
+      if (lower.includes(".jpg") || lower.includes(".jpeg")) return `${fallback}-${idx + 1}.jpg`;
+    } catch (e) {
+      // ignore
+    }
+    return `${fallback}-${idx + 1}.png`;
+  };
+
+  // onSend is handled inside SendReport when we pass `record={selected}`
+
   return (
     <>
       {/* Toggle button (floating) - bottom-right for better visibility */}
@@ -55,11 +80,13 @@ export default function LogPanel({ uid: uidProp }) {
         aria-hidden={!open}
       >
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold">Detection Logs</h3>
+          <span className="bg-gradient-to-r from-indigo-500 via-fuchsia-500 to-cyan-500 bg-clip-text text-transparent text-3xl font-bold">
+          Detection Logs
+        </span>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setOpen(false)}
-              className="rounded-md px-2 py-1 text-sm text-gray-600 hover:bg-gray-100 dark:text-gray-300"
+              className="btn btn-primary rounded-md px-3 py-1 text-lg text-white hover:bg-indigo-700"
             >
               Close
             </button>
@@ -73,7 +100,7 @@ export default function LogPanel({ uid: uidProp }) {
           )}
 
           {!loading && list.length === 0 && (
-            <div className="text-sm text-gray-600">No logs yet.</div>
+            <div className="text-lg text-gray-600">No logs yet.</div>
           )}
 
           <ul className="mt-2 space-y-2">
@@ -85,7 +112,7 @@ export default function LogPanel({ uid: uidProp }) {
                 <li
                   key={it.id}
                   className="cursor-pointer rounded-md border p-2 hover:bg-gray-50 dark:hover:bg-gray-800"
-                  onClick={() => openItem(it)}
+                  onClick={() => { if (deletingId === it.id) return; openItem(it); }}
                 >
                   <div className="flex items-center justify-between">
                     <div>
@@ -103,19 +130,65 @@ export default function LogPanel({ uid: uidProp }) {
                         {it.images?.length || 0} images
                       </div>
                     </div>
-                    <div>
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-5 w-5 text-gray-400"
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v3a1 1 0 00.293.707l2 2a1 1 0 101.414-1.414L11 9.586V7z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
+                    <div className="flex items-center gap-2">
+                      {/* Inline delete icon or loader */}
+                      {deletingId === it.id ? (
+                        <div className="w-8 h-8 flex items-center justify-center">
+                          <ActionLoader status="loading" size={28} showLabel={false} />
+                        </div>
+                      ) : (
+                        // show inline confirm when requested for this item
+                        confirmDeleteId === it.id ? (
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                try {
+                                  const uidNow = uid || auth.currentUser?.uid;
+                                  if (!uidNow) throw new Error('No authenticated user');
+                                  setDeletingId(it.id);
+                                  setConfirmDeleteId(null);
+                                  console.log('[LogPanel] deleting', it.id);
+                                  await deleteRecord(uidNow, it.id, it.images || []);
+                                  if (selected && selected.id === it.id) {
+                                    setSelected(null);
+                                    setOpen(false);
+                                  }
+                                  setDeletingId(null);
+                                } catch (e) {
+                                  console.error('[LogPanel] delete failed', e);
+                                  alert('Failed to delete log. See console for details.');
+                                  setDeletingId(null);
+                                  setConfirmDeleteId(null);
+                                }
+                              }}
+                              className="rounded-md bg-red-600 px-2 py-1 text-xs text-white hover:bg-red-700"
+                            >
+                              Yes
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(null); }}
+                              className="rounded-md bg-gray-100 px-2 py-1 text-xs text-gray-800 hover:bg-gray-200"
+                            >
+                              No
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); console.log('[LogPanel] delete clicked', it.id); setConfirmDeleteId(it.id); }}
+                            title="Delete log"
+                            className="p-1 text-red-500 hover:text-red-700"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M3 6h18" />
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M8 6v14a2 2 0 002 2h4a2 2 0 002-2V6" />
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M10 10v6" />
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M14 10v6" />
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2" />
+                            </svg>
+                          </button>
+                        )
+                      )}
                     </div>
                   </div>
                 </li>
@@ -135,10 +208,16 @@ export default function LogPanel({ uid: uidProp }) {
                   ? selected.createdAt.toLocaleString()
                   : selected.id}
               </h4>
-              <div className="flex gap-2">
+                <div className="flex gap-2">
+                <button
+                  onClick={() => setReportDialogOpen(true)}
+                  className="btn btn-primary rounded-md px-3 py-1 text-lg text-white hover:bg-indigo-700"
+                >
+                  Send Report
+                </button>
                 <button
                   onClick={() => setSelected(null)}
-                  className="rounded-md px-3 py-1 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200"
+                  className="btn btn-primary rounded-md px-3 py-1 text-lg text-white hover:bg-indigo-700"
                 >
                   Close
                 </button>
@@ -158,7 +237,7 @@ export default function LogPanel({ uid: uidProp }) {
                     <a
                       href={src}
                       download
-                      className="text-xs text-indigo-600 hover:underline"
+                      className="text-sm text-indigo-600 hover:underline"
                     >
                       Download
                     </a>
@@ -169,6 +248,20 @@ export default function LogPanel({ uid: uidProp }) {
           </div>
         </div>
       )}
+
+          {/* ReportDialog for sending the selected log */}
+          {selected && (
+            <SendReport
+              open={reportDialogOpen}
+              onClose={() => {
+                setReportDialogOpen(false);
+                setOpen(false);
+                setSelected(null);
+              }}
+              record={selected}
+              attachHints={[]}
+            />
+          )}
     </>
   );
 }
