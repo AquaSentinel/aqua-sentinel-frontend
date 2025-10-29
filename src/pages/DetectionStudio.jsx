@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 
 import { motion } from "framer-motion";
 import UnifiedDetector from "../components/UnifiedDetector";
+import { apiUrl } from "../lib/api";
 export default function DetectionStudio() {
   const [loggedInUser, setLoggedInUser] = useState("");
   const [emailId, setEmail] = useState("");
@@ -27,7 +28,7 @@ export default function DetectionStudio() {
     const handleLogout = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/logout`, {
+      const response = await fetch(apiUrl("/api/logout"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

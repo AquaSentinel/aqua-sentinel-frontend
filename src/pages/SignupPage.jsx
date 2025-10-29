@@ -7,6 +7,7 @@ import signupSideImage from '../assets/images/signupImage.png';
 import { signInWithPopup } from "firebase/auth";
 import { auth, provider } from "../firebase";
 import axios from "axios";
+import { apiUrl } from "../lib/api";
 import MyNavBar from '../components/MyNavBar';
 
 const SignUpPage = () => {
@@ -26,7 +27,7 @@ const SignUpPage = () => {
 
       // 3️⃣ Send token to your Flask backend
       const response = await axios.post(
-        `${import.meta.env.VITE_BACKEND_URL}/api/signup`,
+        apiUrl("/api/signup"),
         {},
         {
           headers: {
