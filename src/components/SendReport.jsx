@@ -109,7 +109,12 @@ const SendReport = ({ open, onClose, artifacts = {}, attachHints = [], record = 
         );
       }
 
-      const res = await fetch("http://localhost:5050/api/report", {
+      // Resolve backend URL from environment (Vite). If not set, fall back to same-origin /api/report
+      const endpoint = `${import.meta.env.VITE_BACKEND_URL}/api/report`
+       
+      console.log('[SendReport] posting to', endpoint);
+
+      const res = await fetch(endpoint, {
         method: "POST",
         body: fd,
         signal,
