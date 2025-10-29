@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
 import ReportDialog from "./ReportDialog.jsx";
 import { auth } from "../firebase";
+import { apiUrl } from "../lib/api";
 
 const makeName = (blob, fallback) => {
   const type = (blob?.type || "").toLowerCase();
@@ -109,8 +110,8 @@ const SendReport = ({ open, onClose, artifacts = {}, attachHints = [], record = 
         );
       }
 
-      // Resolve backend URL from environment (Vite). If not set, fall back to same-origin /api/report
-      const endpoint = `${import.meta.env.VITE_BACKEND_URL}/api/report`
+  // Resolve backend endpoint using centralized helper (supports same-origin fallback under HTTPS)
+  const endpoint = apiUrl("/api/report");
        
       console.log('[SendReport] posting to', endpoint);
 

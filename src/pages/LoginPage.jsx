@@ -5,6 +5,7 @@ import { handleError, handleSucess } from "../utils/utils";
 import { signInWithPopup } from "firebase/auth";
 import { auth, provider } from "../firebase";
 import axios from "axios";
+import { apiUrl } from "../lib/api";
 import MyNavBar from "../components/MyNavBar";
 
 const LoginPage = () => {
@@ -27,7 +28,7 @@ const LoginPage = () => {
       const token = await user.getIdToken();
 
       const response = await axios.post(
-        `${import.meta.env.VITE_BACKEND_URL}/api/login/google`,
+        apiUrl("/api/login/google"),
         {},
         {
           headers: {

@@ -9,6 +9,7 @@ import { useThemeManager } from "../context/ThemeManager";
 import demoPoster from "../assets/images/debrisdetect.png"; // <-- poster image for the video
 import aqua from "../assets/images/aqua.png"; // <-- Aqua Sentinel logo
 import demoVideo from "../assets/videos/demo.mp4"; // <-- short muted demo video
+import { apiUrl } from "../lib/api";
 
 export default function HomePage() {
 
@@ -26,7 +27,7 @@ export default function HomePage() {
   const handleLogout = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/logout`, {
+      const response = await fetch(apiUrl("/api/logout"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
