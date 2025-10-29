@@ -1,6 +1,6 @@
 // DualDetector.jsx
 import React, { useState } from "react";
-import ReportDialog from "./ReportDialog.jsx";
+import SendReport from "./SendReport.jsx";
 import UnifiedDetector from "./UnifiedDetector.jsx";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
@@ -44,27 +44,7 @@ const DualDetector = () => {
     return `${fallback}.png`;
   };
 
-  const onSendReport = async (form) => {
-    try {
-      
-      // Send to backend as multipart/form-data
-      const fd = new FormData();
-      fd.append("vessel", form.vessel || "");
-      fd.append("location", form.location || "");
-      fd.append("email", form.email || "");
-      fd.append("notes", form.notes || "");
-      fd.append("userId", auth.currentUser?.uid || "anonymous");
-
-      const res = await fetch("http://localhost:5050/api/report", { method: "POST", body: fd });
-      if (!res.ok) throw new Error(`Server responded ${res.status}`);
-
-      alert("Report sent successfully with ZIP attachments.");
-      setReportOpen(false);
-    } catch (err) {
-      console.error(err);
-      alert("Failed to send report. Please try again.");
-    }
-  };
+  // send logic moved to SendReport component
 
   return (
     <>
@@ -89,11 +69,11 @@ const DualDetector = () => {
         </div>
       </div>
 
-      {/* Report dialog */}
-      <ReportDialog
+      {/* Report dialog (delegated to SendReport which wraps ReportDialog) */}
+      <SendReport
         open={reportOpen}
         onClose={() => setReportOpen(false)}
-        onSend={onSendReport}
+        artifacts={artifacts}
         attachHints={attachHints}
       />
     </>

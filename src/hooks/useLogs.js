@@ -8,6 +8,7 @@ import {
   doc,
   getDoc,
 } from "firebase/firestore";
+import { onAuthStateChanged } from "firebase/auth";
 
 export default function useLogs(uidProp) {
   const [logs, setLogs] = useState([]);
@@ -15,26 +16,36 @@ export default function useLogs(uidProp) {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    let unsub = null;
-    async function init() {
-      setLoading(true);
-      setError(null);
-      try {
-        const uid = uidProp || auth.currentUser?.uid;
-        if (!uid) {
-          setLogs([]);
-          setLoading(false);
-          return;
-        }
+    let unsubSnapshot = null;
+    let unsubAuth = null;
 
+    const subscribeForUid = (uid) => {
+      // cleanup previous snapshot listener
+      if (typeof unsubSnapshot === "function") {
+        try {
+          unsubSnapshot();
+        } catch (e) {
+          // ignore
+        }
+        unsubSnapshot = null;
+      }
+
+      if (!uid) {
+        setLogs([]);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
         const col = collection(db, "users", uid, "records");
         const q = query(col, orderBy("createdAt", "desc"));
-        unsub = onSnapshot(
+        unsubSnapshot = onSnapshot(
           q,
           (snap) => {
             const items = snap.docs.map((d) => {
               const ddata = d.data() || {};
-              // Ensure createdAt is a JS Date when available
               let createdAt = null;
               if (ddata.createdAt && ddata.createdAt.toDate) {
                 createdAt = ddata.createdAt.toDate();
@@ -61,11 +72,21 @@ export default function useLogs(uidProp) {
         setError(e);
         setLoading(false);
       }
-    }
-    init();
+    };
+
+    // initial subscribe using provided uidProp or current auth user
+    const initialUid = uidProp || auth.currentUser?.uid;
+    subscribeForUid(initialUid);
+
+    // re-subscribe when auth state changes (handles sign-in/out and external edits)
+    unsubAuth = onAuthStateChanged(auth, (user) => {
+      const newUid = uidProp || user?.uid || null;
+      subscribeForUid(newUid);
+    });
 
     return () => {
-      if (typeof unsub === "function") unsub();
+      if (typeof unsubSnapshot === "function") unsubSnapshot();
+      if (typeof unsubAuth === "function") unsubAuth();
     };
   }, [uidProp]);
 
