@@ -26,7 +26,7 @@ const SignUpPage = () => {
 
       // 3️⃣ Send token to your Flask backend
       const response = await axios.post(
-        "http://127.0.0.1:5050/api/signup",
+        `${import.meta.env.VITE_BACKEND_URL}/api/signup`,
         {},
         {
           headers: {

@@ -26,7 +26,7 @@ export default function HomePage() {
   const handleLogout = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://127.0.0.1:5050/api/logout", {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/logout`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
