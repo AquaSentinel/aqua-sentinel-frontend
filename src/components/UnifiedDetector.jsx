@@ -7,7 +7,7 @@ import { saveDetectionRecord } from "../lib/saveDetection";
 import LogPanel from "./LogPanel";
 // --- config ---
 const ENDPOINTS = {
-  combined: "http://localhost:5050/api/detect",
+  combined: `${import.meta.env.VITE_BACKEND_URL}/api/detect`,
   ship: null,
   debris: null,
 };
