@@ -27,7 +27,7 @@ const LoginPage = () => {
       const token = await user.getIdToken();
 
       const response = await axios.post(
-        "http://127.0.0.1:5050/api/login/google",
+        `${import.meta.env.VITE_BACKEND_URL}/api/login/google`,
         {},
         {
           headers: {
