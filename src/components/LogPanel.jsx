@@ -40,7 +40,6 @@ export default function LogPanel({ uid: uidProp }) {
   const [deletingId, setDeletingId] = useState(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
-
   // Report dialog state (for sending a report for the selected log)
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
 
@@ -50,7 +49,8 @@ export default function LogPanel({ uid: uidProp }) {
       const lower = (url || "").toLowerCase();
       if (lower.includes(".png")) return `${fallback}-${idx + 1}.png`;
       if (lower.includes(".webp")) return `${fallback}-${idx + 1}.webp`;
-      if (lower.includes(".jpg") || lower.includes(".jpeg")) return `${fallback}-${idx + 1}.jpg`;
+      if (lower.includes(".jpg") || lower.includes(".jpeg"))
+        return `${fallback}-${idx + 1}.jpg`;
     } catch (e) {
       // ignore
     }
@@ -81,8 +81,8 @@ export default function LogPanel({ uid: uidProp }) {
       >
         <div className="flex items-center justify-between">
           <span className="bg-gradient-to-r from-indigo-500 via-fuchsia-500 to-cyan-500 bg-clip-text text-transparent text-3xl font-bold">
-          Detection Logs
-        </span>
+            Detection Logs
+          </span>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setOpen(false)}
@@ -112,7 +112,10 @@ export default function LogPanel({ uid: uidProp }) {
                 <li
                   key={it.id}
                   className="cursor-pointer rounded-md border p-2 hover:bg-gray-50 dark:hover:bg-gray-800"
-                  onClick={() => { if (deletingId === it.id) return; openItem(it); }}
+                  onClick={() => {
+                    if (deletingId === it.id) return;
+                    openItem(it);
+                  }}
                 >
                   <div className="flex items-center justify-between">
                     <div>
@@ -134,60 +137,103 @@ export default function LogPanel({ uid: uidProp }) {
                       {/* Inline delete icon or loader */}
                       {deletingId === it.id ? (
                         <div className="w-8 h-8 flex items-center justify-center">
-                          <ActionLoader status="loading" size={28} showLabel={false} />
+                          <ActionLoader
+                            status="loading"
+                            size={28}
+                            showLabel={false}
+                          />
+                        </div>
+                      ) : // show inline confirm when requested for this item
+                      confirmDeleteId === it.id ? (
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              try {
+                                const uidNow = uid || auth.currentUser?.uid;
+                                if (!uidNow)
+                                  throw new Error("No authenticated user");
+                                setDeletingId(it.id);
+                                setConfirmDeleteId(null);
+                                console.log("[LogPanel] deleting", it.id);
+                                await deleteRecord(
+                                  uidNow,
+                                  it.id,
+                                  it.images || []
+                                );
+                                if (selected && selected.id === it.id) {
+                                  setSelected(null);
+                                  setOpen(false);
+                                }
+                                setDeletingId(null);
+                              } catch (e) {
+                                console.error("[LogPanel] delete failed", e);
+                                alert(
+                                  "Failed to delete log. See console for details."
+                                );
+                                setDeletingId(null);
+                                setConfirmDeleteId(null);
+                              }
+                            }}
+                            className="rounded-md bg-red-600 px-2 py-1 text-xs text-white hover:bg-red-700"
+                          >
+                            Yes
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setConfirmDeleteId(null);
+                            }}
+                            className="rounded-md bg-gray-100 px-2 py-1 text-xs text-gray-800 hover:bg-gray-200"
+                          >
+                            No
+                          </button>
                         </div>
                       ) : (
-                        // show inline confirm when requested for this item
-                        confirmDeleteId === it.id ? (
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={async (e) => {
-                                e.stopPropagation();
-                                try {
-                                  const uidNow = uid || auth.currentUser?.uid;
-                                  if (!uidNow) throw new Error('No authenticated user');
-                                  setDeletingId(it.id);
-                                  setConfirmDeleteId(null);
-                                  console.log('[LogPanel] deleting', it.id);
-                                  await deleteRecord(uidNow, it.id, it.images || []);
-                                  if (selected && selected.id === it.id) {
-                                    setSelected(null);
-                                    setOpen(false);
-                                  }
-                                  setDeletingId(null);
-                                } catch (e) {
-                                  console.error('[LogPanel] delete failed', e);
-                                  alert('Failed to delete log. See console for details.');
-                                  setDeletingId(null);
-                                  setConfirmDeleteId(null);
-                                }
-                              }}
-                              className="rounded-md bg-red-600 px-2 py-1 text-xs text-white hover:bg-red-700"
-                            >
-                              Yes
-                            </button>
-                            <button
-                              onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(null); }}
-                              className="rounded-md bg-gray-100 px-2 py-1 text-xs text-gray-800 hover:bg-gray-200"
-                            >
-                              No
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); console.log('[LogPanel] delete clicked', it.id); setConfirmDeleteId(it.id); }}
-                            title="Delete log"
-                            className="p-1 text-red-500 hover:text-red-700"
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            console.log("[LogPanel] delete clicked", it.id);
+                            setConfirmDeleteId(it.id);
+                          }}
+                          title="Delete log"
+                          className="p-1 text-red-500 hover:text-red-700"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-5 w-5"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
                           >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M3 6h18" />
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M8 6v14a2 2 0 002 2h4a2 2 0 002-2V6" />
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M10 10v6" />
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M14 10v6" />
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2" />
-                            </svg>
-                          </button>
-                        )
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M3 6h18"
+                            />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M8 6v14a2 2 0 002 2h4a2 2 0 002-2V6"
+                            />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M10 10v6"
+                            />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M14 10v6"
+                            />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"
+                            />
+                          </svg>
+                        </button>
                       )}
                     </div>
                   </div>
@@ -208,7 +254,7 @@ export default function LogPanel({ uid: uidProp }) {
                   ? selected.createdAt.toLocaleString()
                   : selected.id}
               </h4>
-                <div className="flex gap-2">
+              <div className="flex gap-2">
                 <button
                   onClick={() => setReportDialogOpen(true)}
                   className="btn btn-primary rounded-md px-3 py-1 text-lg text-white hover:bg-indigo-700"
@@ -224,44 +270,118 @@ export default function LogPanel({ uid: uidProp }) {
               </div>
             </div>
 
-            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {(selected.images || []).map((src, idx) => (
-                <div key={idx} className="rounded-md border p-2">
-                  <img
-                    src={src}
-                    alt={`log-${selected.id}-${idx}`}
-                    className="h-48 w-full object-contain"
-                  />
-                  <div className="mt-2 flex items-center justify-between">
-                    <div className="text-xs text-gray-600">Image {idx + 1}</div>
-                    <a
-                      href={src}
-                      download
-                      className="text-sm text-indigo-600 hover:underline"
-                    >
-                      Download
-                    </a>
+            <div className="mt-3 space-y-6">
+              {/* Ship Detection Row */}
+              <div>
+                <h5 className="text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                  Ship Detection
+                </h5>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="rounded-md border p-2">
+                    <img
+                      src={selected.images?.[0]}
+                      alt="Ship Original"
+                      className="h-48 w-full object-contain"
+                    />
+                    <div className="mt-2 flex items-center justify-between">
+                      <div className="text-xs text-gray-600">
+                        Original Image
+                      </div>
+                      <a
+                        href={selected.images?.[0]}
+                        download
+                        className="text-sm text-indigo-600 hover:underline"
+                      >
+                        Download
+                      </a>
+                    </div>
+                  </div>
+                  <div className="rounded-md border p-2">
+                    <img
+                      src={selected.images?.[2]}
+                      alt="Ship Detection Result"
+                      className="h-48 w-full object-contain"
+                    />
+                    <div className="mt-2 flex items-center justify-between">
+                      <div className="text-xs text-gray-600">
+                        Detection Result
+                      </div>
+                      <a
+                        href={selected.images?.[2]}
+                        download
+                        className="text-sm text-indigo-600 hover:underline"
+                      >
+                        Download
+                      </a>
+                    </div>
                   </div>
                 </div>
-              ))}
+              </div>
+
+              {/* Debris Detection Row */}
+              <div>
+                <h5 className="text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                  Debris Detection
+                </h5>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="rounded-md border p-2">
+                    <img
+                      src={selected.images?.[1]}
+                      alt="Debris Original"
+                      className="h-48 w-full object-contain"
+                    />
+                    <div className="mt-2 flex items-center justify-between">
+                      <div className="text-xs text-gray-600">
+                        Original Image
+                      </div>
+                      <a
+                        href={selected.images?.[1]}
+                        download
+                        className="text-sm text-indigo-600 hover:underline"
+                      >
+                        Download
+                      </a>
+                    </div>
+                  </div>
+                  <div className="rounded-md border p-2">
+                    <img
+                      src={selected.images?.[3]}
+                      alt="Debris Detection Result"
+                      className="h-48 w-full object-contain"
+                    />
+                    <div className="mt-2 flex items-center justify-between">
+                      <div className="text-xs text-gray-600">
+                        Detection Result
+                      </div>
+                      <a
+                        href={selected.images?.[3]}
+                        download
+                        className="text-sm text-indigo-600 hover:underline"
+                      >
+                        Download
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       )}
 
-          {/* ReportDialog for sending the selected log */}
-          {selected && (
-            <SendReport
-              open={reportDialogOpen}
-              onClose={() => {
-                setReportDialogOpen(false);
-                setOpen(false);
-                setSelected(null);
-              }}
-              record={selected}
-              attachHints={[]}
-            />
-          )}
+      {/* ReportDialog for sending the selected log */}
+      {selected && (
+        <SendReport
+          open={reportDialogOpen}
+          onClose={() => {
+            setReportDialogOpen(false);
+            setOpen(false);
+            setSelected(null);
+          }}
+          record={selected}
+          attachHints={[]}
+        />
+      )}
     </>
   );
 }
