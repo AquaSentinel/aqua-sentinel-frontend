@@ -5,9 +5,10 @@ import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { saveDetectionRecord } from "../lib/saveDetection";
 import LogPanel from "./LogPanel";
+import { apiUrl } from "../lib/api";
 // --- config ---
 const ENDPOINTS = {
-  combined: `${import.meta.env.VITE_BACKEND_URL}/api/detect`,
+  combined: apiUrl("/api/detect"),
   ship: null,
   debris: null,
 };
