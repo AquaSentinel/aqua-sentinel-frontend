@@ -1,14 +1,9 @@
 import { useState, useEffect } from 'react';
 import { UserCircle } from 'lucide-react';
-
+import useRequireAuth from '../hooks/useRequireAuth';
 function ProfilePage() {
-  const [loggedInUser, setLoggedInUser] = useState("");
-  const [emailId, setEmail] = useState("");
-
-  useEffect(() => {
-    setLoggedInUser(localStorage.getItem("loggedInUser"));
-    setEmail(localStorage.getItem('emailId'));
-  }, []);
+  const { loggedInUser, emailId } = useRequireAuth(); // just to enforce auth
+  
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black py-12 px-4">

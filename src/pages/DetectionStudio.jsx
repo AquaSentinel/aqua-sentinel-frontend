@@ -4,25 +4,12 @@ import MyNavBar from "../components/MyNavBar";
 import Footer from "../components/Footer";
 import DualDetector from "../components/DualDetector";
 import { useNavigate } from "react-router-dom";
-
+import useRequireAuth from "../hooks/useRequireAuth";
 import { motion } from "framer-motion";
 import UnifiedDetector from "../components/UnifiedDetector";
 import { apiUrl } from "../lib/api";
 export default function DetectionStudio() {
-  const [loggedInUser, setLoggedInUser] = useState("");
-  const [emailId, setEmail] = useState("");
-  const navigate = useNavigate();
-
-    useEffect(() => {
-    const token = localStorage.getItem("token");
-    const name = localStorage.getItem("loggedInUser");
-    if (!token) {
-      navigate("/login");
-    } else {
-      setLoggedInUser(name || "");
-      setEmail(localStorage.getItem("emailId") || "");
-    }
-  }, [navigate]);
+  const { loggedInUser, emailId } = useRequireAuth(); // just to enforce auth
 
 
     const handleLogout = async () => {

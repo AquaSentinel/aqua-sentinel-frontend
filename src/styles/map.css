@@ -1,0 +1,9 @@
+.leaflet-control {
+  z-index: 1100 !important;
+}
+#map {
+  z-index: 0;
+}
+.map-overlay {
+  z-index: 1000;
+}

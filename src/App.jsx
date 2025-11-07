@@ -4,8 +4,10 @@ import SignupPage from "./pages/SignupPage";
 import HomePage from "./pages/HomePage";
 import ProfilePage from "./components/Profile";
 import DetectionStudio from "./pages/DetectionStudio";
+import GlobePage from "./pages/GlobePage.jsx"
+import MapPage from "./pages/MapPage.jsx";
 function App() {
-  console.log("Firebase Project ID:", import.meta.env.VITE_FIREBASE_PROJECT_ID);
+  // console.log("Firebase Project ID:", import.meta.env.VITE_FIREBASE_PROJECT_ID); // do not print this on console
   return (
     <>
       <Routes>
@@ -14,7 +16,10 @@ function App() {
         <Route path="/signup" element={<SignupPage />}></Route>
         <Route path="/DetectionStudio" element={<DetectionStudio />}/>
           <Route path="/DetectionStudio/profile" element={<ProfilePage />} />
+        <Route path="/globeview" element={<GlobePage />} />
+        <Route path="/mapview" element={<MapPage />} />
       </Routes>
+      
     </>
   );
 }
