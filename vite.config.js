@@ -1,13 +1,15 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import tailwindcss from '@tailwindcss/vite'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
+
 export default defineConfig({
   server: {
-    host: "0.0.0.0",   // allows access from external devices
-    port: 3000,        // (optional) choose any port you want
+    host: '0.0.0.0',
+    port: 3000,
   },
-  plugins: [
-    react(),
-    tailwindcss(),
-  ],
-})
+  plugins: [react(), tailwindcss()],
+  optimizeDeps: {
+    include: ['globe.gl', 'three'],
+    exclude: ['three-globe'],
+  },
+});
