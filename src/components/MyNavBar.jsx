@@ -91,6 +91,12 @@ const MyNavBar = ({ loggedInUser = "", onLogout }) => {
                   Detection Studio
                 </a>
                 <a
+                  href="/globeview"
+                  className="rounded-full px-5 py-2 text-sm font-medium hover:bg-gray-900/5 dark:hover:bg-white/10"
+                >
+                  Globe View
+                </a>
+                <a
                   href="#features"
                   className="rounded-full px-5 py-2 text-sm font-medium hover:bg-gray-900/5 dark:hover:bg-white/10"
                 >
@@ -167,17 +173,6 @@ const MyNavBar = ({ loggedInUser = "", onLogout }) => {
               </div>
             )}
 
-            {/* Theme toggle */}
-            {/* <button
-              onClick={cycleTheme}
-              title={`Theme: ${theme}`}
-              aria-label="Toggle theme"
-              className="ml-2 inline-flex h-9 w-9 items-center justify-center rounded-full
-                         bg-gray-900/5 hover:bg-gray-900/10
-                         dark:bg-white/10 dark:hover:bg-white/20"
-            >
-              {Icon}
-            </button> */}
           </div>
 
           {/* Mobile controls */}
@@ -229,6 +224,14 @@ const MyNavBar = ({ loggedInUser = "", onLogout }) => {
                     >
                       Detection Studio
                     </a>
+                    <a
+                      href="/globeview"
+                      onClick={() => setOpen(false)}
+                      className="block rounded-xl px-4 py-3 hover:bg-gray-900/5 dark:hover:bg-white/10"
+                    >
+                      Globe view
+                    </a>
+                     
                     <a
                       href="#features"
                       onClick={() => setOpen(false)}
