@@ -115,10 +115,22 @@ const SendReport = ({ open, onClose, artifacts = {}, attachHints = [], record = 
        
       console.log('[SendReport] posting to', endpoint);
 
+      // If the user is authenticated, attach their ID token so the backend can verify identity server-side.
+      const headers = {};
+      try {
+        if (auth.currentUser) {
+          const idToken = await auth.currentUser.getIdToken();
+          if (idToken) headers["Authorization"] = `Bearer ${idToken}`;
+        }
+      } catch (e) {
+        console.warn('[SendReport] failed to get idToken', e);
+      }
+
       const res = await fetch(endpoint, {
         method: "POST",
         body: fd,
         signal,
+        headers,
       });
 
       if (!res.ok) throw new Error(`Server responded ${res.status}`);
