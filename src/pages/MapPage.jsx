@@ -1,87 +1,194 @@
-import React, { useRef, useState, useCallback } from 'react';
-import SendReport from '../components/SendReport.jsx';
+import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import useRequireAuth from '../hooks/useRequireAuth';
 import MapContainer from '../components/map/MapContainer.jsx';
 import ControlsPanel from '../components/map/ControlsPanel.jsx';
 import Coordinates from '../components/map/Coordinates.jsx';
-import ImagesModal from '../components/map/ImagesModal.jsx';
-import { stitchImages } from '../utils/imageUtils';
-import { fetchOrDummy } from '../utils/fetchHelpers';
+
+import TimeSeriesPanel from '../components/map/TimeSeriesPanel.jsx';
+
 import '../styles/map.css';
 
 export default function MapPage() {
   const mapApiRef = useRef(null);
-  useRequireAuth(); // this itself runs the logic to enforce auth
+  useRequireAuth();
+
   const [coords, setCoords] = useState({ lat: null, lng: null });
-  const [showVessels, setShowVessels] = useState(false);
-  const [showDebris, setShowDebris] = useState(false);
-  const [imagesModalOpen, setImagesModalOpen] = useState(false);
-  const [modalImages, setModalImages] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [sendReportOpen, setSendReportOpen] = useState(false);
-  const [combinedArtifact, setCombinedArtifact] = useState(null);
-  const [stitching, setStitching] = useState(false);
 
-  const toggleVessels = async (enabled) => {
-    setShowVessels(enabled);
-    if (!mapApiRef.current) return;
-    if (!enabled) {
-      mapApiRef.current.clearVessels();
-      return;
-    }
-    const items = await fetchOrDummy('/api/vessels', 12);
-    mapApiRef.current.addMarkersToVessels(items);
-  };
 
-  const toggleDebris = async (enabled) => {
-    setShowDebris(enabled);
-    if (!mapApiRef.current) return;
-    if (!enabled) {
-      mapApiRef.current.clearDebris();
-      return;
+  const [detectionMode, setDetectionMode] = useState('none');
+  const [selectedLocation, setSelectedLocation] = useState(null);
+  const [timeSeriesData, setTimeSeriesData] = useState([]);
+  const [currentTimeIndex, setCurrentTimeIndex] = useState(0);
+  const [monitoring, setMonitoring] = useState(false);
+  const [alertImageModal, setAlertImageModal] = useState(null);
+
+  const API_BASE = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+
+  const satelliteData = timeSeriesData[currentTimeIndex] || null;
+
+  useEffect(() => {
+    if (!mapApiRef.current || !satelliteData) return;
+
+    if (detectionMode !== 'none') {
+      const overlayType = detectionMode === 'vessels' ? 'ships' : 'debris';
+      const overlays = createImageOverlays(satelliteData, overlayType);
+      mapApiRef.current.setImageOverlays(overlays);
+      mapApiRef.current.toggleOverlays(true);
+    } else {
+      mapApiRef.current.toggleOverlays(false);
     }
-    const items = await fetchOrDummy('/api/debris', 12);
-    mapApiRef.current.addMarkersToDebris(items);
+  }, [detectionMode, satelliteData]);
+
+  const setDetectionType = (type) => {
+    setDetectionMode(type);
+    if (!mapApiRef.current) return;
+
+    mapApiRef.current.clearVessels();
+    mapApiRef.current.clearDebris();
   };
 
   const handleSearch = async (query) => {
     if (!query) return;
+
+    // Handle coordinate objects from the ControlsPanel
+    if (typeof query === 'object' && query.isCoordinate) {
+      const { lat, lon } = query;
+
+      if (mapApiRef.current) {
+        mapApiRef.current.setView(lat, lon, 8);
+        mapApiRef.current.addMarker(lat, lon, `${lat.toFixed(4)}, ${lon.toFixed(4)}`);
+      }
+
+      setCoords({ lat: lat.toFixed(6), lng: lon.toFixed(6) });
+      setSelectedLocation({ lat, lon, name: `${lat.toFixed(4)}, ${lon.toFixed(4)}` });
+      return;
+    }
+
+    // Handle regular location search
+    if (!query.trim()) return;
+
     try {
       const res = await fetch(`${import.meta.env.VITE_NOMINATIM_URL}${encodeURIComponent(query)}`);
       const data = await res.json();
+
       if (data.length > 0) {
-        const first = data[0];
-        const lat = parseFloat(first.lat);
-        const lon = parseFloat(first.lon);
+        const location = data[0];
+        const lat = parseFloat(location.lat);
+        const lon = parseFloat(location.lon);
+
         if (mapApiRef.current) {
           mapApiRef.current.setView(lat, lon, 6);
-          mapApiRef.current.addMarker(lat, lon, first.display_name);
+          mapApiRef.current.addMarker(lat, lon, location.display_name);
         }
+
         setCoords({ lat: lat.toFixed(6), lng: lon.toFixed(6) });
-      } else {
-        alert('Location not found');
+        setSelectedLocation({ lat, lon, name: `${lat.toFixed(4)}, ${lon.toFixed(4)}` });
       }
     } catch (err) {
       console.error('Search failed:', err);
-      alert('Search failed');
+    }
+  }; const fetchSatelliteData = async () => {
+    if (!selectedLocation?.lat || !selectedLocation?.lon) {
+      console.error('No valid location selected - missing lat/lon properties:', selectedLocation);
+      return;
+    }
+
+    setMonitoring(true);
+    setTimeSeriesData([]);
+    setCurrentTimeIndex(0);
+
+    const timestamps = [
+      "2024-11-08-15-30-00",
+      "2024-11-08-16-00-00",
+      "2024-11-08-16-30-00"
+    ];
+
+    const params = new URLSearchParams({
+      baseLat: selectedLocation.lat.toString(),
+      baseLon: selectedLocation.lon.toString()
+    });
+
+    try {
+      const timeSeriesResults = [];
+
+      for (let i = 0; i < timestamps.length; i++) {
+        const timestamp = timestamps[i];
+
+        if (i > 0) {
+          await new Promise(resolve => setTimeout(resolve, 10000));
+        }
+
+        try {
+          const response = await fetch(`${API_BASE}/api/process/${timestamp}?${params}`);
+          const data = response.ok
+            ? await response.json()
+            : { timestamp, patches: [], alerts: [] };
+
+          timeSeriesResults.push(data);
+          setTimeSeriesData([...timeSeriesResults]);
+          setCurrentTimeIndex(i);
+
+          if (mapApiRef.current && data?.patches) {
+            mapApiRef.current.clearAlerts();
+            const alertPatches = data.patches.filter(p => p.detections?.is_alert);
+
+            if (alertPatches.length > 0) {
+              const alertMarkers = alertPatches.map(p => ({
+                lat: p.coordinates.latitude,
+                lng: p.coordinates.longitude,
+                timestamp: data.timestamp,
+                patch: p
+              }));
+              mapApiRef.current.addMarkersToAlerts(alertMarkers);
+            }
+          }
+
+        } catch (fetchError) {
+          console.error(`Error for timestamp ${timestamp}:`, fetchError);
+          timeSeriesResults.push({ timestamp, patches: [], alerts: [] });
+          setTimeSeriesData([...timeSeriesResults]);
+        }
+      }
+
+    } catch (error) {
+      console.error('Time series failed:', error);
+    } finally {
+      setMonitoring(false);
     }
   };
 
+  const createImageOverlays = useCallback((satelliteData, overlayType = 'ships') => {
+    if (!satelliteData?.patches) return [];
+
+    const LAT_STEP = 0.017297;
+    const LON_STEP = 0.017297;
+
+    return satelliteData.patches.map((patch) => {
+      const { coordinates, patch_id } = patch;
+      const { latitude: lat, longitude: lon } = coordinates;
+
+      const bounds = [
+        [lat - LAT_STEP / 2, lon - LON_STEP / 2],
+        [lat + LAT_STEP / 2, lon + LON_STEP / 2]
+      ];
+
+      const imageSrc = overlayType === 'debris'
+        ? `${API_BASE}/api/view/${satelliteData.timestamp}/debris/${lat}/${lon}`
+        : `${API_BASE}/api/view/${satelliteData.timestamp}/ship/${lat}/${lon}`;
+
+      return {
+        key: `overlay-${patch_id}`,
+        url: imageSrc,
+        bounds,
+        opacity: 1.0
+      };
+    });
+  }, []);
+
   const fetchLatestRecord = async () => {
-    try {
-      let res = await fetch(`${import.meta.env.VITE_API_URL}/api/fetch-images`);
-      if (!res.ok) res = await fetch(`${import.meta.env.VITE_API_URL}/api/get-images`);
-      if (!res.ok) throw new Error('no-images');
-      const data = await res.json();
-      const imgs = (data.images || data.records || data.items || []).slice(0, 16).map((it) => it.url || it.image || it.path || it);
-      if (!imgs || imgs.length === 0) throw new Error('empty');
-      while (imgs.length < 16) imgs.push(`https://picsum.photos/seed/${Math.random().toString(36).slice(2)}/300`);
-      setModalImages(imgs.slice(0, 16));
-      setImagesModalOpen(true);
-    } catch (err) {
-      const imgs = Array.from({ length: 16 }).map((_, i) => `https://picsum.photos/seed/fallback${i}/300`);
-      setModalImages(imgs);
-      setImagesModalOpen(true);
+    if (selectedLocation) {
+      await fetchSatelliteData();
     }
   };
 
@@ -89,49 +196,131 @@ export default function MapPage() {
     setCoords({ lat: p.lat.toFixed(6), lng: p.lng.toFixed(6) });
   }, []);
 
+  const handleMapClick = useCallback((p) => {
+    const lat = parseFloat(p.lat.toFixed(6));
+    const lon = parseFloat(p.lng.toFixed(6));
+
+    if (mapApiRef.current) {
+      mapApiRef.current.addMarker(lat, lon, `Location: ${lat}, ${lon}`);
+    }
+
+    setSelectedLocation({ lat, lon, name: `${lat}, ${lon}` });
+    setCoords({ lat: lat.toFixed(6), lng: p.lng.toFixed(6) });
+  }, []);
+
+  const handleAlertClick = useCallback((alertData) => {
+    const { lat, lng, timestamp } = alertData;
+    const shipImage = `${API_BASE}/api/view/${timestamp}/ship/${lat}/${lng}`;
+    const debrisImage = `${API_BASE}/api/view/${timestamp}/debris/${lat}/${lng}`;
+
+    setAlertImageModal({
+      lat,
+      lng,
+      timestamp,
+      shipImage,
+      debrisImage
+    });
+  }, []);
+
+  const handleReset = useCallback(() => {
+    if (mapApiRef.current) {
+      mapApiRef.current.setView(20, 0, 2);
+      mapApiRef.current.clearVessels();
+      mapApiRef.current.clearDebris();
+      mapApiRef.current.clearAlerts();
+      mapApiRef.current.clearMarkers();
+      mapApiRef.current.clearOverlays();
+      mapApiRef.current.toggleOverlays(false);
+    }
+
+    setSelectedLocation(null);
+    setTimeSeriesData([]);
+    setCurrentTimeIndex(0);
+    setDetectionMode('none');
+    setCoords({ lat: null, lng: null });
+    setSearchQuery('');
+    setAlertImageModal(null);
+  }, []);
+
+
+
+
+
   return (
     <div className="w-full h-screen relative">
-      <MapContainer ref={mapApiRef} onMove={handleMapMove} />
+      <MapContainer ref={mapApiRef} onMove={handleMapMove} onClick={handleMapClick} onAlertClick={handleAlertClick} />
 
       <ControlsPanel
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         onSearch={handleSearch}
-        showVessels={showVessels}
-        setShowVessels={toggleVessels}
-        showDebris={showDebris}
-        setShowDebris={toggleDebris}
+        detectionMode={detectionMode}
+        setDetectionMode={setDetectionType}
         onFetchLatest={fetchLatestRecord}
-        onReset={() => mapApiRef.current && mapApiRef.current.setView(20, 0, 2)}
+        onReset={handleReset}
+        monitoring={monitoring}
+        selectedLocation={selectedLocation}
       />
 
       <Coordinates coords={coords} />
 
-      <ImagesModal
-        open={imagesModalOpen}
-        images={modalImages}
-        stitching={stitching}
-        onClose={() => setImagesModalOpen(false)}
-        onSend={async () => {
-          setStitching(true);
-          try {
-            const blob = await stitchImages(modalImages, 300, 4, 4);
-            const file = new File([blob], `latest-record-${Date.now()}.jpg`, { type: blob.type || 'image/jpeg' });
-            setCombinedArtifact({ debrisOriginal: file });
-            setImagesModalOpen(false);
-            setSendReportOpen(true);
-          } catch (e) {
-            console.error('Stitch failed', e);
-            setCombinedArtifact(null);
-            setImagesModalOpen(false);
-            setSendReportOpen(true);
-          } finally {
-            setStitching(false);
-          }
-        }}
-      />
 
-      <SendReport open={sendReportOpen} onClose={() => setSendReportOpen(false)} artifacts={combinedArtifact || {}} attachHints={[]} record={null} />
+
+      {alertImageModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-4 max-w-md">
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="font-semibold">🚨 Alert Detection</h3>
+              <button
+                onClick={() => setAlertImageModal(null)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+            <p className="text-sm text-gray-600 mb-3">
+              Location: {alertImageModal.lat.toFixed(4)}, {alertImageModal.lng.toFixed(4)}
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <p className="text-xs font-medium mb-1">🚢 Ship Detection</p>
+                <img
+                  src={alertImageModal.shipImage}
+                  alt="Ship detection"
+                  className="w-full h-32 object-cover rounded border"
+                />
+              </div>
+              <div>
+                <p className="text-xs font-medium mb-1">🗑️ Debris Detection</p>
+                <img
+                  src={alertImageModal.debrisImage}
+                  alt="Debris detection"
+                  className="w-full h-32 object-cover rounded border"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {timeSeriesData.length > 0 && (
+        <>
+          <TimeSeriesPanel
+            timeSeriesData={timeSeriesData}
+            currentTimeIndex={currentTimeIndex}
+            setCurrentTimeIndex={setCurrentTimeIndex}
+            gridType="ships"
+            position="top-right"
+          />
+          <TimeSeriesPanel
+            timeSeriesData={timeSeriesData}
+            currentTimeIndex={currentTimeIndex}
+            setCurrentTimeIndex={setCurrentTimeIndex}
+            gridType="debris"
+            position="bottom-right"
+          />
+        </>
+      )}
     </div>
   );
 }
