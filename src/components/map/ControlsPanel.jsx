@@ -49,7 +49,7 @@ export default function ControlsPanel({
   };
 
   return (
-    <div className="absolute top-4 left-4 bg-gray-900/85 text-white p-4 rounded-lg w-80 border border-gray-600">
+    <div className="absolute top-30 left-4 bg-gray-900/85 text-white p-4 rounded-lg w-80 border border-gray-600">
       <h3 className="font-semibold mb-2">🛰️ AquaSentinel Map</h3>
 
       {selectedLocation && (

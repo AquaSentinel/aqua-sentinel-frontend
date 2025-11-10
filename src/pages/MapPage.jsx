@@ -1,16 +1,20 @@
-import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import useRequireAuth from '../hooks/useRequireAuth';
 import MapContainer from '../components/map/MapContainer.jsx';
 import ControlsPanel from '../components/map/ControlsPanel.jsx';
 import Coordinates from '../components/map/Coordinates.jsx';
-
+import SearchBootstrap from '../components/map/SearchBootstrap.jsx';
+import MyNavBar from "../components/MyNavBar";
 import TimeSeriesPanel from '../components/map/TimeSeriesPanel.jsx';
+import { apiUrl } from "../lib/api";
 
 import '../styles/map.css';
+import useMapSearch from '../hooks/useMapSearch.js';
 
 export default function MapPage() {
   const mapApiRef = useRef(null);
-  useRequireAuth();
+    const { loggedInUser, emailId } = useRequireAuth(); // just to enforce auth
+  
 
   const [coords, setCoords] = useState({ lat: null, lng: null });
   const [searchQuery, setSearchQuery] = useState('');
@@ -48,47 +52,38 @@ export default function MapPage() {
     mapApiRef.current.clearDebris();
   };
 
-  const handleSearch = async (query) => {
-    if (!query) return;
-
-    // Handle coordinate objects from the ControlsPanel
-    if (typeof query === 'object' && query.isCoordinate) {
-      const { lat, lon } = query;
-
-      if (mapApiRef.current) {
-        mapApiRef.current.setView(lat, lon, 8);
-        mapApiRef.current.addMarker(lat, lon, `${lat.toFixed(4)}, ${lon.toFixed(4)}`);
-      }
-
-      setCoords({ lat: lat.toFixed(6), lng: lon.toFixed(6) });
-      setSelectedLocation({ lat, lon, name: `${lat.toFixed(4)}, ${lon.toFixed(4)}` });
-      return;
-    }
-
-    // Handle regular location search
-    if (!query.trim()) return;
-
+  const handleLogout = async () => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_NOMINATIM_URL}${encodeURIComponent(query)}`);
-      const data = await res.json();
+      const token = localStorage.getItem("token");
+      const response = await fetch(apiUrl("/api/logout"), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
 
-      if (data.length > 0) {
-        const location = data[0];
-        const lat = parseFloat(location.lat);
-        const lon = parseFloat(location.lon);
-
-        if (mapApiRef.current) {
-          mapApiRef.current.setView(lat, lon, 6);
-          mapApiRef.current.addMarker(lat, lon, location.display_name);
-        }
-
-        setCoords({ lat: lat.toFixed(6), lng: lon.toFixed(6) });
-        setSelectedLocation({ lat, lon, name: `${lat.toFixed(4)}, ${lon.toFixed(4)}` });
+      const result = await response.json();
+      if (result.success) {
+        localStorage.clear(); // clear all
+        setLoggedInUser("");  // update UI state
+        navigate("/login", { replace: true }); // immediate navigation
+      } else {
+        console.error("Logout failed:", result.message);
       }
-    } catch (err) {
-      console.error('Search failed:', err);
+    } catch (error) {
+      console.error("Logout failed:", error);
     }
-  }; const fetchSatelliteData = async () => {
+  };
+  
+  const { handleSearch } = useMapSearch({
+    mapApiRef,
+    setCoords,
+    setSelectedLocation,
+    nominatimUrl: import.meta.env.VITE_NOMINATIM_URL
+  });
+
+  const fetchSatelliteData = async () => {
     if (!selectedLocation?.lat || !selectedLocation?.lon) {
       console.error('No valid location selected - missing lat/lon properties:', selectedLocation);
       return;
@@ -184,7 +179,7 @@ export default function MapPage() {
         opacity: 1.0
       };
     });
-  }, []);
+  }, [API_BASE]);
 
   const fetchLatestRecord = async () => {
     if (selectedLocation) {
@@ -248,6 +243,9 @@ export default function MapPage() {
 
   return (
     <div className="w-full h-screen relative">
+          <MyNavBar loggedInUser={loggedInUser} onLogout={handleLogout} />
+
+      <SearchBootstrap onSearch={handleSearch} setSearchQuery={setSearchQuery} />
       <MapContainer ref={mapApiRef} onMove={handleMapMove} onClick={handleMapClick} onAlertClick={handleAlertClick} />
 
       <ControlsPanel
@@ -324,3 +322,4 @@ export default function MapPage() {
     </div>
   );
 }
+
