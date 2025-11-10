@@ -1,12 +1,14 @@
-import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import useRequireAuth from '../hooks/useRequireAuth';
 import MapContainer from '../components/map/MapContainer.jsx';
 import ControlsPanel from '../components/map/ControlsPanel.jsx';
 import Coordinates from '../components/map/Coordinates.jsx';
+import SearchBootstrap from '../components/map/SearchBootstrap.jsx';
 
 import TimeSeriesPanel from '../components/map/TimeSeriesPanel.jsx';
 
 import '../styles/map.css';
+import useMapSearch from '../hooks/useMapSearch.js';
 
 export default function MapPage() {
   const mapApiRef = useRef(null);
@@ -48,47 +50,14 @@ export default function MapPage() {
     mapApiRef.current.clearDebris();
   };
 
-  const handleSearch = async (query) => {
-    if (!query) return;
+  const { handleSearch } = useMapSearch({
+    mapApiRef,
+    setCoords,
+    setSelectedLocation,
+    nominatimUrl: import.meta.env.VITE_NOMINATIM_URL
+  });
 
-    // Handle coordinate objects from the ControlsPanel
-    if (typeof query === 'object' && query.isCoordinate) {
-      const { lat, lon } = query;
-
-      if (mapApiRef.current) {
-        mapApiRef.current.setView(lat, lon, 8);
-        mapApiRef.current.addMarker(lat, lon, `${lat.toFixed(4)}, ${lon.toFixed(4)}`);
-      }
-
-      setCoords({ lat: lat.toFixed(6), lng: lon.toFixed(6) });
-      setSelectedLocation({ lat, lon, name: `${lat.toFixed(4)}, ${lon.toFixed(4)}` });
-      return;
-    }
-
-    // Handle regular location search
-    if (!query.trim()) return;
-
-    try {
-      const res = await fetch(`${import.meta.env.VITE_NOMINATIM_URL}${encodeURIComponent(query)}`);
-      const data = await res.json();
-
-      if (data.length > 0) {
-        const location = data[0];
-        const lat = parseFloat(location.lat);
-        const lon = parseFloat(location.lon);
-
-        if (mapApiRef.current) {
-          mapApiRef.current.setView(lat, lon, 6);
-          mapApiRef.current.addMarker(lat, lon, location.display_name);
-        }
-
-        setCoords({ lat: lat.toFixed(6), lng: lon.toFixed(6) });
-        setSelectedLocation({ lat, lon, name: `${lat.toFixed(4)}, ${lon.toFixed(4)}` });
-      }
-    } catch (err) {
-      console.error('Search failed:', err);
-    }
-  }; const fetchSatelliteData = async () => {
+  const fetchSatelliteData = async () => {
     if (!selectedLocation?.lat || !selectedLocation?.lon) {
       console.error('No valid location selected - missing lat/lon properties:', selectedLocation);
       return;
@@ -184,7 +153,7 @@ export default function MapPage() {
         opacity: 1.0
       };
     });
-  }, []);
+  }, [API_BASE]);
 
   const fetchLatestRecord = async () => {
     if (selectedLocation) {
@@ -248,6 +217,7 @@ export default function MapPage() {
 
   return (
     <div className="w-full h-screen relative">
+      <SearchBootstrap onSearch={handleSearch} setSearchQuery={setSearchQuery} />
       <MapContainer ref={mapApiRef} onMove={handleMapMove} onClick={handleMapClick} onAlertClick={handleAlertClick} />
 
       <ControlsPanel
@@ -324,3 +294,4 @@ export default function MapPage() {
     </div>
   );
 }
+
