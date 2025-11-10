@@ -4,15 +4,17 @@ import MapContainer from '../components/map/MapContainer.jsx';
 import ControlsPanel from '../components/map/ControlsPanel.jsx';
 import Coordinates from '../components/map/Coordinates.jsx';
 import SearchBootstrap from '../components/map/SearchBootstrap.jsx';
-
+import MyNavBar from "../components/MyNavBar";
 import TimeSeriesPanel from '../components/map/TimeSeriesPanel.jsx';
+import { apiUrl } from "../lib/api";
 
 import '../styles/map.css';
 import useMapSearch from '../hooks/useMapSearch.js';
 
 export default function MapPage() {
   const mapApiRef = useRef(null);
-  useRequireAuth();
+    const { loggedInUser, emailId } = useRequireAuth(); // just to enforce auth
+  
 
   const [coords, setCoords] = useState({ lat: null, lng: null });
   const [searchQuery, setSearchQuery] = useState('');
@@ -50,6 +52,30 @@ export default function MapPage() {
     mapApiRef.current.clearDebris();
   };
 
+  const handleLogout = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(apiUrl("/api/logout"), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        localStorage.clear(); // clear all
+        setLoggedInUser("");  // update UI state
+        navigate("/login", { replace: true }); // immediate navigation
+      } else {
+        console.error("Logout failed:", result.message);
+      }
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
+  
   const { handleSearch } = useMapSearch({
     mapApiRef,
     setCoords,
@@ -217,6 +243,8 @@ export default function MapPage() {
 
   return (
     <div className="w-full h-screen relative">
+          <MyNavBar loggedInUser={loggedInUser} onLogout={handleLogout} />
+
       <SearchBootstrap onSearch={handleSearch} setSearchQuery={setSearchQuery} />
       <MapContainer ref={mapApiRef} onMove={handleMapMove} onClick={handleMapClick} onAlertClick={handleAlertClick} />
 
