@@ -108,9 +108,19 @@ export default function MapPage() {
     setCurrentTimeIndex(0);
 
     const timestamps = [
-      "2024-11-08-15-30-00",
-      "2024-11-08-16-00-00",
-      "2024-11-08-16-30-00"
+      [
+        "2024-11-08-15-30-00",
+        "2024-11-08-16-00-00",
+        "2024-11-08-16-30-00"],
+      ["2025-02-08-15-30-00",
+        "2025-02-08-16-00-00",
+        "2025-02-08-16-30-00"],
+      ["2025-08-08-15-30-00",
+        "2025-08-08-16-00-00",
+        "2025-08-08-16-30-00"],
+      ["2025-11-08-15-30-00",
+        "2025-11-08-16-00-00",
+        "2025-11-08-16-30-00"]
     ];
 
     const params = new URLSearchParams({
@@ -121,8 +131,13 @@ export default function MapPage() {
     try {
       const timeSeriesResults = [];
 
-      for (let i = 0; i < timestamps.length; i++) {
-        const timestamp = timestamps[i];
+      const randBit = () => Math.floor(Math.random() * 4);
+      // const dataset_no = randBit();// 0 to 3 // random dataset for demo
+      const dataset_no=1; // for testing fixed dataset 
+      console.log("Selected dataset no:", dataset_no);
+      for (let i = 0; i < timestamps[0].length; i++) {
+
+        const timestamp = timestamps[dataset_no][i];
 
         if (i > 0) {
           await new Promise(resolve => setTimeout(resolve, 10000));
