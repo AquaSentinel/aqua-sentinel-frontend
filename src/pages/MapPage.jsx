@@ -13,8 +13,8 @@ import useMapSearch from '../hooks/useMapSearch.js';
 
 export default function MapPage() {
   const mapApiRef = useRef(null);
-    const { loggedInUser, emailId } = useRequireAuth(); // just to enforce auth
-  
+  const { loggedInUser, emailId } = useRequireAuth(); // just to enforce auth
+
 
   const [coords, setCoords] = useState({ lat: null, lng: null });
   const [searchQuery, setSearchQuery] = useState('');
@@ -26,10 +26,24 @@ export default function MapPage() {
   const [currentTimeIndex, setCurrentTimeIndex] = useState(0);
   const [monitoring, setMonitoring] = useState(false);
   const [alertImageModal, setAlertImageModal] = useState(null);
+  const [accumulatedAlerts, setAccumulatedAlerts] = useState(() => {
+
+    const stored = localStorage.getItem('aqua-sentinel-alerts');
+    return stored ? JSON.parse(stored) : [];
+  });
 
   const API_BASE = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
 
   const satelliteData = timeSeriesData[currentTimeIndex] || null;
+
+  useEffect(() => {
+    if (mapApiRef.current) {
+      mapApiRef.current.clearAlerts();
+      if (accumulatedAlerts.length > 0) {
+        mapApiRef.current.addMarkersToAlerts(accumulatedAlerts);
+      }
+    }
+  }, [accumulatedAlerts]);
 
   useEffect(() => {
     if (!mapApiRef.current || !satelliteData) return;
@@ -75,7 +89,7 @@ export default function MapPage() {
       console.error("Logout failed:", error);
     }
   };
-  
+
   const { handleSearch } = useMapSearch({
     mapApiRef,
     setCoords,
@@ -115,6 +129,10 @@ export default function MapPage() {
         }
 
         try {
+          // Add isInitial parameter - true for first timestamp, false for others
+          const isInitial = i === 0;
+          params.set('isInitial', isInitial.toString());
+
           const response = await fetch(`${API_BASE}/api/process/${timestamp}?${params}`);
           const data = response.ok
             ? await response.json()
@@ -125,17 +143,26 @@ export default function MapPage() {
           setCurrentTimeIndex(i);
 
           if (mapApiRef.current && data?.patches) {
-            mapApiRef.current.clearAlerts();
             const alertPatches = data.patches.filter(p => p.detections?.is_alert);
 
             if (alertPatches.length > 0) {
-              const alertMarkers = alertPatches.map(p => ({
+              const newAlertMarkers = alertPatches.map(p => ({
                 lat: p.coordinates.latitude,
                 lng: p.coordinates.longitude,
                 timestamp: data.timestamp,
-                patch: p
+                patch: p,
+                baseLocationLat: selectedLocation.lat,
+                baseLocationLon: selectedLocation.lon,
+                detectedAt: new Date().toISOString()
               }));
-              mapApiRef.current.addMarkersToAlerts(alertMarkers);
+
+              setAccumulatedAlerts(prevAlerts => {
+                const updatedAlerts = [...prevAlerts, ...newAlertMarkers];
+                localStorage.setItem('aqua-sentinel-alerts', JSON.stringify(updatedAlerts));
+                return updatedAlerts;
+              });
+
+
             }
           }
 
@@ -204,7 +231,7 @@ export default function MapPage() {
   }, []);
 
   const handleAlertClick = useCallback((alertData) => {
-    const { lat, lng, timestamp } = alertData;
+    const { lat, lng, timestamp, detectedAt } = alertData;
     const shipImage = `${API_BASE}/api/view/${timestamp}/ship/${lat}/${lng}`;
     const debrisImage = `${API_BASE}/api/view/${timestamp}/debris/${lat}/${lng}`;
 
@@ -212,6 +239,7 @@ export default function MapPage() {
       lat,
       lng,
       timestamp,
+      detectedAt,
       shipImage,
       debrisImage
     });
@@ -235,6 +263,7 @@ export default function MapPage() {
     setCoords({ lat: null, lng: null });
     setSearchQuery('');
     setAlertImageModal(null);
+
   }, []);
 
 
@@ -243,7 +272,7 @@ export default function MapPage() {
 
   return (
     <div className="w-full h-screen relative">
-          <MyNavBar loggedInUser={loggedInUser} onLogout={handleLogout} />
+      <MyNavBar loggedInUser={loggedInUser} onLogout={handleLogout} />
 
       <SearchBootstrap onSearch={handleSearch} setSearchQuery={setSearchQuery} />
       <MapContainer ref={mapApiRef} onMove={handleMapMove} onClick={handleMapClick} onAlertClick={handleAlertClick} />
@@ -276,8 +305,14 @@ export default function MapPage() {
                 ✕
               </button>
             </div>
-            <p className="text-sm text-gray-600 mb-3">
+            <p className="text-sm text-gray-600 mb-2">
               Location: {alertImageModal.lat.toFixed(4)}, {alertImageModal.lng.toFixed(4)}
+            </p>
+            <p className="text-xs text-gray-500 mb-3">
+              Alert from: {alertImageModal.timestamp}
+              {alertImageModal.detectedAt && (
+                <span className="block">Detected: {new Date(alertImageModal.detectedAt).toLocaleString()}</span>
+              )}
             </p>
             <div className="grid grid-cols-2 gap-2">
               <div>
