@@ -75,7 +75,7 @@ export default function ControlsPanel({
         </button>
       </div>
 
-      <div className="mb-2">
+      <div className="mb-3">
         <div className="text-sm mb-1">Detection Mode:</div>
         <label className="flex items-center gap-2 cursor-pointer">
           <input
@@ -90,10 +90,10 @@ export default function ControlsPanel({
           <input
             type="radio"
             name="detectionView"
-            checked={detectionMode === 'vessels'}
-            onChange={() => setDetectionMode('vessels')}
+            checked={detectionMode === 'ships'}
+            onChange={() => setDetectionMode('ships')}
           />
-          🚢 Ship Overlay
+          🚢 Ship Overlay View
         </label>
         <label className="flex items-center gap-2 mt-1 cursor-pointer">
           <input
@@ -102,7 +102,16 @@ export default function ControlsPanel({
             checked={detectionMode === 'debris'}
             onChange={() => setDetectionMode('debris')}
           />
-          🗑️ Debris Overlay
+          🗑️ Debris Overlay View
+        </label>
+        <label className="flex items-center gap-2 mt-1 cursor-pointer">
+          <input
+            type="radio"
+            name="detectionView"
+            checked={detectionMode === 'distance'}
+            onChange={() => setDetectionMode('distance')}
+          />
+          📏 Distance View
         </label>
       </div>
 
