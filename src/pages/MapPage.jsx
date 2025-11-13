@@ -49,7 +49,7 @@ export default function MapPage() {
     if (!mapApiRef.current || !satelliteData) return;
 
     if (detectionMode !== 'none') {
-      const overlayType = detectionMode === 'vessels' ? 'ships' : 'debris';
+      const overlayType = detectionMode === 'ships' ? 'ships' :(detectionMode==='distance')?'distance' :'debris';
       const overlays = createImageOverlays(satelliteData, overlayType);
       mapApiRef.current.setImageOverlays(overlays);
       mapApiRef.current.toggleOverlays(true);
@@ -212,7 +212,8 @@ export default function MapPage() {
 
       const imageSrc = overlayType === 'debris'
         ? `${API_BASE}/api/view/${satelliteData.timestamp}/debris/${lat}/${lon}`
-        : `${API_BASE}/api/view/${satelliteData.timestamp}/ship/${lat}/${lon}`;
+        : (overlayType === 'ships')? `${API_BASE}/api/view/${satelliteData.timestamp}/ship/${lat}/${lon}`
+        :`${API_BASE}/api/view/${satelliteData.timestamp}/distance/${lat}/${lon}`;
 
       return {
         key: `overlay-${patch_id}`,
@@ -249,6 +250,7 @@ export default function MapPage() {
     const { lat, lng, timestamp, detectedAt } = alertData;
     const shipImage = `${API_BASE}/api/view/${timestamp}/ship/${lat}/${lng}`;
     const debrisImage = `${API_BASE}/api/view/${timestamp}/debris/${lat}/${lng}`;
+    const distanceImage = `${API_BASE}/api/view/${timestamp}/distance/${lat}/${lng}`;
 
     setAlertImageModal({
       lat,
@@ -256,7 +258,8 @@ export default function MapPage() {
       timestamp,
       detectedAt,
       shipImage,
-      debrisImage
+      debrisImage,
+      distanceImage
     });
   }, []);
 
@@ -346,6 +349,14 @@ export default function MapPage() {
                   className="w-full h-32 object-cover rounded border"
                 />
               </div>
+              <div>
+                <p className="text-xs font-medium mb-1">📏 Distance Detection</p>
+                <img
+                  src={alertImageModal.distanceImage}
+                  alt="Distance detection"
+                  className="w-full h-32 object-cover rounded border"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -366,6 +377,13 @@ export default function MapPage() {
             setCurrentTimeIndex={setCurrentTimeIndex}
             gridType="debris"
             position="bottom-right"
+          />
+          <TimeSeriesPanel
+            timeSeriesData={timeSeriesData}
+            currentTimeIndex={currentTimeIndex}
+            setCurrentTimeIndex={setCurrentTimeIndex}
+            gridType="distance"
+            position="center-right"
           />
         </>
       )}

@@ -14,7 +14,7 @@ export default function TimeSeriesPanel({
     const currentData = timeSeriesData[currentTimeIndex];
     if (!currentData?.patches) return null;
 
-    const positionClass = position === 'bottom-right' ? 'absolute bottom-4 right-4' : 'absolute top-4 right-4';
+    const positionClass = position === 'bottom-right' ? 'absolute bottom-4 right-4' : position === 'center-right'?'absolute bottom-80 right-4': 'absolute top-4 right-4';
 
     const renderGrid = () => {
         const gridRows = [];
@@ -38,7 +38,7 @@ export default function TimeSeriesPanel({
 
                 const imageSrc = gridType === 'debris'
                     ? `${API_BASE}/api/view/${timestamp}/debris/${lat}/${lon}`
-                    : `${API_BASE}/api/view/${timestamp}/ship/${lat}/${lon}`;
+                    : gridType === 'ships'?`${API_BASE}/api/view/${timestamp}/ship/${lat}/${lon}`:`${API_BASE}/api/view/${timestamp}/distance/${lat}/${lon}`;
 
                 gridCols.push(
                     <div key={patch_id} className="w-12 h-12">
@@ -65,7 +65,7 @@ export default function TimeSeriesPanel({
         <div className={`${positionClass} bg-black/80 text-white p-3 rounded-lg border border-gray-600 z-50`}>
             <div className="flex items-center justify-between mb-2">
                 <h4 className="text-sm font-semibold">
-                    {gridType === 'debris' ? '🗑️ Debris' : '🚢 Ships'} Timeline
+                    {gridType === 'debris' ? '🗑️ Debris' :gridType==='ships' ?'🚢 Ship':'distance'} Timeline
                 </h4>
                 <div className="flex items-center gap-1">
                     <button
