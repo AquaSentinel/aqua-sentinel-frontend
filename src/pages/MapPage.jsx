@@ -281,6 +281,8 @@ export default function MapPage() {
     setCoords({ lat: null, lng: null });
     setSearchQuery('');
     setAlertImageModal(null);
+    setAccumulatedAlerts([]);
+    localStorage.removeItem('aqua-sentinel-alerts');
 
   }, []);
 
