@@ -111,7 +111,7 @@ export default function ControlsPanel({
             checked={detectionMode === 'distance'}
             onChange={() => setDetectionMode('distance')}
           />
-          📏 Distance View
+          📏 Ship+Debris Overlay View
         </label>
       </div>
 
