@@ -84,12 +84,12 @@ const MyNavBar = ({ loggedInUser = "", onLogout }) => {
           <div className="hidden items-center gap-1 md:flex">
             {loggedInUser ? (
               <>
-                <a
+                {/* <a
                   href="/detectionstudio"
                   className="rounded-full px-5 py-2 text-sm font-medium hover:bg-gray-900/5 dark:hover:bg-white/10"
                 >
                   Detection Studio
-                </a>
+                </a> */}
                 <a
                   href="/globeview"
                   className="rounded-full px-5 py-2 text-sm font-medium hover:bg-gray-900/5 dark:hover:bg-white/10"
