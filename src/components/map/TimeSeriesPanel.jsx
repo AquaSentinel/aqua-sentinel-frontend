@@ -65,7 +65,7 @@ export default function TimeSeriesPanel({
         <div className={`${positionClass} bg-black/80 text-white p-3 rounded-lg border border-gray-600 z-50`}>
             <div className="flex items-center justify-between mb-2">
                 <h4 className="text-sm font-semibold">
-                    {gridType === 'debris' ? '🗑️ Debris' :gridType==='ships' ?'🚢 Ship':'distance'} Timeline
+                    {gridType === 'debris' ? '🗑️ Debris' :gridType==='ships' ?'🚢 Ship':'Combined'} Timeline
                 </h4>
                 <div className="flex items-center gap-1">
                     <button
