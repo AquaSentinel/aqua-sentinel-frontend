@@ -133,7 +133,7 @@ export default function MapPage() {
 
       const randBit = () => Math.floor(Math.random() * 4);
       // const dataset_no = randBit();// 0 to 3 // random dataset for demo
-      const dataset_no=1; // for testing fixed dataset 
+      const dataset_no=3; // for testing fixed dataset 
       console.log("Selected dataset no:", dataset_no);
       for (let i = 0; i < timestamps[0].length; i++) {
 

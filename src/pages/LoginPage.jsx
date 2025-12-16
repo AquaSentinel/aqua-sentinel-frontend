@@ -40,7 +40,7 @@ const LoginPage = () => {
       handleSucess(`Welcome back ${user.displayName || user.email}!`);
       localStorage.setItem("token", token);
       localStorage.setItem("loggedInUser", user.displayName || user.email);
-      setTimeout(() => navigate("/DetectionStudio"), 1500);
+      setTimeout(() => navigate("/"), 1500);
     } catch (error) {
       console.error("❌ Google login failed:", error);
       handleError("Google Login failed. Please try again.");
