@@ -8,7 +8,6 @@ import { useThemeManager } from "../context/ThemeManager";
 // import logo from "../assets/aqua-logo.svg";              // <-- put your logo svg/png here
 import demoPoster from "../assets/images/debrisdetect.png"; // <-- poster image for the video
 import aqua from "../assets/images/aqua.png"; // <-- Aqua Sentinel logo
-import demoVideo from "../assets/videos/demo.mp4"; // <-- short muted demo video
 import { apiUrl } from "../lib/api";
 
 export default function HomePage() {
