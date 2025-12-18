@@ -143,16 +143,13 @@ export default function HomePage() {
                 Seamless Two-Step Inference
               </div>
               <div className="aspect-[16/9] w-full overflow-hidden rounded-2xl bg-gray-800">
-                <video
+                <iframe
                   id="demo"
-                  className="h-full w-full object-cover"
-                  src={demoVideo}
-                  poster={demoPoster}
-                  autoPlay
-                  muted
-                  playsInline
-                  loop
-                  controls
+                  className="h-full w-full"
+                  src="https://www.youtube.com/embed/wN-0MyZbO3A?autoplay=1&mute=1&loop=1&playlist=wN-0MyZbO3A"
+                  title="Aqua Sentinel Demo"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
                 />
               </div>
               <div className="mt-3 grid grid-cols-3 gap-3">
